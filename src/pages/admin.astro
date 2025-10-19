@@ -1,5 +1,10 @@
 ---
 export const prerender = false;
+
+// In development, redirect to Tina's dev server
+if (import.meta.env.DEV) {
+  return Astro.redirect('http://localhost:4001/admin/index.html');
+}
 ---
 
 <!DOCTYPE html>
@@ -8,14 +13,22 @@ export const prerender = false;
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>&FRIENDS Admin</title>
+    <script type="module">
+      // In production, redirect to built admin interface
+      window.location.href = '/admin/index.html';
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script>
-      import TinaCMS from "tinacms";
-      import { TinaProvider } from "tinacms/dist/react";
-      
-      // Tina will inject its UI here
-    </script>
+    <p>Redirecting to admin...</p>
   </body>
 </html>
+```
+
+---
+
+## **Step 3: Move Tina credentials to environment variables**
+
+**Create `.env` file in your project root:**
+```
+TINA_CLIENT_ID=38f5cc0a-f76d-42d8-99c2-9f87deeaf2f3
+TINA_TOKEN=082efe1a861019acf25a8c6348462be9514c305a

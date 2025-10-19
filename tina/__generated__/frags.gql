@@ -1,0 +1,15 @@
+fragment ContentParts on Content {
+  __typename
+  projects {
+    __typename
+    title
+    description
+    date
+    contributors
+    image
+    tags
+    featured
+    client
+    url
+  }
+}

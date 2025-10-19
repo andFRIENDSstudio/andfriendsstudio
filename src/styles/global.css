@@ -150,7 +150,11 @@ html.lenis, html.lenis body {
 
 .grey-box {
     background: #333;
-    flex-shrink: 0;
+    flex-shrink: 0;.grey-box {
+  min-width: 300px;
+  min-height: 400px;
+}
+    
 }
 
 .grey-box.tall {

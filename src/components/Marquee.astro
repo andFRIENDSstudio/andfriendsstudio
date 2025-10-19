@@ -1,16 +1,28 @@
 ---
-// Marquee component - simplified structure
+import projectsData from '../data/projects.json';
+const projects = projectsData.projects || [];
 ---
 
 <div class="marquee-wrapper">
     <div class="marquee-track">
-        <div class="grey-box tall" data-project="Project Alpha" data-client="Netflix" data-year="2024"></div>
-        <div class="grey-box wide" data-project="Brand Identity" data-client="Apple" data-year="2023"></div>
-        <div class="grey-box square" data-project="Motion Design" data-client="Spotify" data-year="2024"></div>
-        <div class="grey-box tall" data-project="Immersive Experience" data-client="Meta" data-year="2023"></div>
-        <div class="grey-box wide" data-project="Art Installation" data-client="MoMA" data-year="2024"></div>
-        <div class="grey-box square" data-project="Live Event" data-client="Coachella" data-year="2023"></div>
-        <div class="grey-box tall" data-project="Product Launch" data-client="Tesla" data-year="2024"></div>
-        <div class="grey-box wide" data-project="Creative Direction" data-client="Nike" data-year="2023"></div>
+        {projects.map((project) => (
+            <div 
+                class="grey-box"
+                data-project={project.title}
+                data-contributors={project.contributors?.join(', ')}
+                data-client={project.client}
+                style={`background-image: url(${project.image}); background-size: cover; background-position: center;`}
+            >
+            </div>
+        ))}
     </div>
 </div>
+
+<style>
+    .grey-box {
+        height: 100%; /* Fixed height for all */
+        aspect-ratio: auto; /* Let width be determined by image */
+        min-width: 250px; /* Minimum width so they don't get too narrow */
+        flex-shrink: 0;
+    }
+</style>
