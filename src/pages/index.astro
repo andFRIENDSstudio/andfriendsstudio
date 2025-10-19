@@ -1,0 +1,48 @@
+---
+import Logo from '../components/Logo.astro';
+import Marquee from '../components/Marquee.astro';
+import CustomCursor from '../components/CustomCursor.astro';
+import ScrollAnimations from '../components/ScrollAnimations.astro';
+import '../styles/global.css';
+
+const siteSettings = {
+  email: "andfriendsstudio23@gmail.com",
+  instagram: "and.friends.studio",
+  aboutCopy: "&FRIENDS Studio is the collective creative practice of designers, developers, founders, and friends connecting on the projects that come their way or come to mind. Their respective backgrounds span the areas of graphic and motion design, fine art, immersive installations, and live events. From these diverse and interdisciplinary talents, their approach to art is medium-agnostic, centering instead on expressing and evoking reflection, community, and wonder. As individuals, their work has contributed to some of the most widely recognized shows in entertainment in association with many top-tier studios."
+};
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>&FRIENDS Studio</title>
+</head>
+<body>
+    <div class="hero-state">
+        <div class="top-bar">
+            <div class="links">
+                <a href={`mailto:${siteSettings.email}`}>Email</a>
+                <a href={`https://instagram.com/${siteSettings.instagram}`} target="_blank">Instagram</a>
+            </div>
+            <div class="about-copy">
+                {siteSettings.aboutCopy}
+            </div>
+        </div>
+
+        <Marquee />
+
+        <Logo />
+
+        <div class="footer-bar">
+            <div>© &FRIENDS Studio</div>
+            <div>2023-2025</div>
+            <div>All Rights Reserved</div>
+        </div>
+    </div>
+
+    <CustomCursor />
+    <ScrollAnimations />
+</body>
+</html>

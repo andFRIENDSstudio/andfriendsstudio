@@ -1,0 +1,167 @@
+---
+// CustomCursor.astro - Pure vanilla JS, no React needed
+---
+
+<div class="custom-cursor">
+  <div class="cursor-content"></div>
+</div>
+
+<style>
+  *, *::before, *::after {
+    cursor: none !important;
+  }
+  
+  html, body {
+    cursor: none !important;
+  }
+  
+  .custom-cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: difference;
+    border: 2px solid #fff;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background-color: #fff;
+    overflow: hidden;
+  }
+  
+  
+  .cursor-content {
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    padding: 0 20px;
+    white-space: nowrap;
+    opacity: 0;
+    line-height: 1.3;
+  }
+  
+  .cursor-content strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  
+  .cursor-content span {
+    font-size: 10px;
+    opacity: 0.8;
+  }
+
+  @media (max-width: 768px) {
+    .custom-cursor {
+      display: none;
+    }
+    * {
+      cursor: auto !important;
+    }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+
+  const cursor = document.querySelector('.custom-cursor');
+  const content = document.querySelector('.cursor-content');
+  let mouseX = 0;
+  let mouseY = 0;
+  let cursorState = 'default';
+
+  // Smooth cursor follow
+  const moveCursor = (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  };
+
+  const animateCursor = () => {
+    gsap.to(cursor, {
+      x: mouseX,
+      y: mouseY,
+      duration: 0.3,
+      ease: 'power2.out'
+    });
+    requestAnimationFrame(animateCursor);
+  };
+
+  // State change handler
+  const setCursorState = (state, projectInfo = null) => {
+    if (state === 'default') {
+      gsap.to(cursor, {
+        width: 12,
+        height: 12,
+        borderWidth: 0,
+        backgroundColor: '#fff',
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+      gsap.to(content, { opacity: 0, duration: 0.2 });
+    } 
+    else if (state === 'link') {
+      gsap.to(cursor, {
+        width: 40,
+        height: 40,
+        borderWidth: 2,
+        backgroundColor: 'transparent',
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+      gsap.to(content, { opacity: 0, duration: 0.2 });
+    } 
+    else if (state === 'pill' && projectInfo) {
+      content.innerHTML = `
+        <strong>${projectInfo.name}</strong>
+        <span>${projectInfo.client} • ${projectInfo.year}</span>
+      `;
+      gsap.to(cursor, {
+        width: 280,
+        height: 60,
+        borderWidth: 2,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        duration: 0.4,
+        ease: 'power3.out'
+      });
+      gsap.to(content, { opacity: 1, duration: 0.3, delay: 0.1 });
+    }
+    cursorState = state;
+  };
+
+  // Event handlers
+  const handleLinkEnter = () => setCursorState('link');
+  const handleLinkLeave = () => setCursorState('default');
+
+  const handleImageEnter = (e) => {
+    const target = e.currentTarget;
+    const projectInfo = {
+      name: target.dataset.project || 'Project Name',
+      client: target.dataset.client || 'Client Name',
+      year: target.dataset.year || '2024'
+    };
+    setCursorState('pill', projectInfo);
+  };
+
+  const handleImageLeave = () => setCursorState('default');
+
+  // Initialize
+  document.addEventListener('mousemove', moveCursor);
+  animateCursor();
+
+  // Attach to links
+  const links = document.querySelectorAll('a');
+  links.forEach(link => {
+    link.addEventListener('mouseenter', handleLinkEnter);
+    link.addEventListener('mouseleave', handleLinkLeave);
+  });
+
+  // Attach to marquee images
+  const images = document.querySelectorAll('.grey-box');
+  images.forEach(img => {
+    img.addEventListener('mouseenter', handleImageEnter);
+    img.addEventListener('mouseleave', handleImageLeave);
+  });
+</script>

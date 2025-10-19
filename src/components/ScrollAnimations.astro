@@ -1,0 +1,130 @@
+---
+// ScrollAnimations.astro - Desktop scroll animations
+---
+
+<script>
+    import gsap from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    import Lenis from 'lenis';
+    
+    gsap.registerPlugin(ScrollTrigger);
+
+    const isDesktop = window.innerWidth > 768;
+
+    if (isDesktop) {
+        // Calculate marquee dimensions first
+        const track = document.querySelector('.marquee-track');
+        
+        // Function to recalculate on resize
+        function setupAnimations() {
+            // Kill existing ScrollTriggers to refresh
+            ScrollTrigger.getAll().forEach(st => st.kill());
+            
+            const trackWidth = track.scrollWidth;
+            const viewportWidth = window.innerWidth;
+            const paddingRight = viewportWidth * 0.05;
+            const totalDistance = trackWidth - viewportWidth + paddingRight;
+
+            // RESPONSIVE: Scale page height based on viewport width
+            const basePageHeight = 600;
+            const viewportScale = viewportWidth / 1920;
+            const pageHeight = basePageHeight * Math.max(0.7, viewportScale);
+            
+            document.body.style.minHeight = `${pageHeight}vh`;
+
+            // ADAPTIVE TIMING: Wider screens = more overlap, narrower = less overlap
+            const widthRatio = Math.min(Math.max(viewportWidth / 1920, 0.5), 1);
+            
+            const logoShrinkEnd = pageHeight * gsap.utils.interpolate(0.75, 0.65, widthRatio);
+            const marqueeStart = pageHeight * gsap.utils.interpolate(0.25, 0.35, widthRatio);
+
+            const logoTimeline = gsap.timeline({
+                scrollTrigger: {
+                    trigger: 'body',
+                    start: 'top top',
+                    end: `${logoShrinkEnd}vh top`,
+                    scrub: 2,
+                    invalidateOnRefresh: true,
+                }
+            });
+
+            // ADAPTIVE SCALE: Smaller viewports = less shrinking
+            const targetScale = gsap.utils.interpolate(0.8, 0.45, widthRatio);
+
+            logoTimeline
+                .to('.logo-container', {
+                    scale: targetScale,
+                    ease: 'none',
+                }, 0)
+                .to('.logo-container', {
+                    clipPath: 'inset(0 85% 0 0)',
+                    ease: 'none',
+                }, 0);
+
+            // Marquee: slides in proportionally, completes at page end
+            gsap.fromTo('.marquee-track',
+                { 
+                    x: viewportWidth
+                },
+                { 
+                    x: -totalDistance,
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: 'body',
+                        start: `${marqueeStart}vh top`,
+                        end: 'bottom bottom',
+                        scrub: 5,
+                        invalidateOnRefresh: true,
+                    }
+                }
+            );
+            
+            ScrollTrigger.refresh();
+        }
+        
+        // Initial setup
+        setupAnimations();
+        
+        // ENTRY ANIMATION: Clip-path reveal on page load
+        gsap.from('.logo-container', {
+            clipPath: 'inset(0 100% 0 0)',
+            duration: 1.5,
+            ease: 'power2.out',
+            delay: 0.3
+        });
+
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            orientation: 'vertical',
+            smoothWheel: true,
+            wheelMultiplier: 1,
+            smoothTouch: false,
+            touchMultiplier: 2,
+        });
+
+        lenis.on('scroll', ScrollTrigger.update);
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // Debounced resize handler
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                setupAnimations();
+            }, 250);
+        });
+    } else {
+        // Mobile: duplicate marquee track for infinite loop
+        const track = document.querySelector('.marquee-track');
+        if (track) {
+            const clone = track.innerHTML;
+            track.innerHTML = track.innerHTML + clone;
+        }
+    }
+</script>
