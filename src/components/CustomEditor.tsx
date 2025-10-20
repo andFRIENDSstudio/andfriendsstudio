@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import client from '../tina/__generated__/client';
 
 interface Project {
   title: string;
@@ -31,25 +30,17 @@ export default function CustomEditor() {
   const textElementRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load projects from Tina
+  // Load projects
   useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const result = await client.queries.content({
-          relativePath: 'projects.json'
-        });
-        
-        const projectsData = result.data.content.projects || [];
-        setProjects(projectsData as Project[]);
-        if (projectsData.length > 0) {
-          setCurrentProject(projectsData[0] as Project);
+    fetch('/api/projects')
+      .then(res => res.json())
+      .then(data => {
+        setProjects(data.projects || []);
+        if (data.projects && data.projects.length > 0) {
+          setCurrentProject(data.projects[0]);
         }
-      } catch (err) {
-        console.error('Failed to load projects:', err);
-      }
-    };
-
-    loadProjects();
+      })
+      .catch(err => console.error('Failed to load projects:', err));
   }, []);
 
   // Update current project when selection changes
@@ -59,7 +50,7 @@ export default function CustomEditor() {
     }
   }, [selectedIndex, projects]);
 
-  // Cursor logic (unchanged)
+  // Cursor logic
   useEffect(() => {
     if (!marqueeRef.current || !cursorRef.current || !textElementRef.current) return;
 
@@ -162,23 +153,31 @@ export default function CustomEditor() {
     };
   }, [projects, selectedIndex]);
 
-  // UPDATED: Save via Tina mutation instead of direct file write
+  // Save via GitHub API
   const handleSave = async () => {
     setIsSaving(true);
     const updatedProjects = [...projects];
     updatedProjects[selectedIndex] = currentProject;
 
+    console.log('Saving projects:', updatedProjects);
+
     try {
-      // Use Tina's mutation to update the content
-      await client.queries.updateContent({
-        relativePath: 'projects.json',
-        params: {
-          projects: updatedProjects
-        }
+      const response = await fetch('/api/save-projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projects: updatedProjects })
       });
 
-      setProjects(updatedProjects);
-      alert('✓ SAVED & COMMITTED TO GIT');
+      const data = await response.json();
+      console.log('Save response:', data);
+
+      if (response.ok) {
+        setProjects(updatedProjects);
+        alert('✓ SAVED & COMMITTED TO GITHUB');
+      } else {
+        console.error('Save failed:', data);
+        alert(`✗ SAVE FAILED: ${data.error || 'Unknown error'}`);
+      }
     } catch (err) {
       console.error('Save error:', err);
       alert(`✗ SAVE FAILED: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -267,7 +266,7 @@ export default function CustomEditor() {
           <div className="editor-card placeholder" />
           <div className="editor-card placeholder" />
           
-          <div
+         <div
             className={`editor-card active size-${currentProject.displaySize || 'standard'}`}
             data-title={currentProject.title}
             data-contributors={currentProject.contributors?.join(',')}
@@ -289,7 +288,7 @@ export default function CustomEditor() {
         </div>
       </div>
 
-      {/* Right Side - Form (unchanged) */}
+      {/* Right Side - Form */}
       <div className="editor-form">
         <div className="editor-header">
           <h1 className="editor-title">&FRIENDS_EDITOR</h1>

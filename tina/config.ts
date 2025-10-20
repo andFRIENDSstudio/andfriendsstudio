@@ -5,6 +5,7 @@ import { ProjectPreview } from "./components/ProjectPreview";
 export default defineConfig({
   branch: "main",
   
+  // Make sure these pull from env
   clientId: process.env.TINA_CLIENT_ID,
   token: process.env.TINA_TOKEN,
   
