@@ -199,6 +199,7 @@ var ProjectPreview = (props) => {
 // tina/config.ts
 var config_default = defineConfig({
   branch: "main",
+  // Make sure these pull from env
   clientId: process.env.TINA_CLIENT_ID,
   token: process.env.TINA_TOKEN,
   build: {
