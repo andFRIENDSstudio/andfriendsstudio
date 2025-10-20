@@ -1,6 +1,13 @@
 ---
 // src/pages/editor/login.astro
 const error = Astro.url.searchParams.get('error');
+
+const errorMessages = {
+  invalid: '✗ INVALID PASSWORD',
+  no_code: '✗ AUTHENTICATION FAILED',
+  auth_failed: '✗ GOOGLE AUTH FAILED',
+  unauthorized: '✗ EMAIL NOT AUTHORIZED',
+};
 ---
 
 <!DOCTYPE html>
@@ -9,6 +16,9 @@ const error = Astro.url.searchParams.get('error');
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>&FRIENDS Editor - Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -17,7 +27,7 @@ const error = Astro.url.searchParams.get('error');
     }
     
     body {
-      font-family: monospace;
+      font-family: 'JetBrains Mono', monospace;
       background: #000;
       color: #fff;
       display: flex;
@@ -36,6 +46,7 @@ const error = Astro.url.searchParams.get('error');
     
     h1 {
       font-size: 15px;
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.1em;
       margin-bottom: 0.5rem;
@@ -43,13 +54,69 @@ const error = Astro.url.searchParams.get('error');
     
     .subtitle {
       font-size: 10.5px;
+      font-weight: 400;
       color: #666;
       margin-bottom: 2rem;
+    }
+    
+    .google-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .google-btn:hover {
+      background: #ddd;
+    }
+    
+    .google-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .divider {
+      text-align: center;
+      color: #666;
+      font-size: 10px;
+      font-weight: 400;
+      margin: 2rem 0;
+      position: relative;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #333;
+    }
+    
+    .divider::before {
+      left: 0;
+    }
+    
+    .divider::after {
+      right: 0;
     }
     
     label {
       display: block;
       font-size: 10.5px;
+      font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #888;
@@ -62,7 +129,7 @@ const error = Astro.url.searchParams.get('error');
       background: #000;
       color: #fff;
       border: 1px solid #333;
-      font-family: monospace;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 12.5px;
       margin-bottom: 1.5rem;
       transition: border-color 0.2s;
@@ -80,10 +147,10 @@ const error = Astro.url.searchParams.get('error');
     button {
       width: 100%;
       padding: 0.75rem;
-      background: #fff;
-      color: #000;
-      border: none;
-      font-family: monospace;
+      background: transparent;
+      color: #fff;
+      border: 1px solid #333;
+      font-family: 'JetBrains Mono', monospace;
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
@@ -93,7 +160,9 @@ const error = Astro.url.searchParams.get('error');
     }
     
     button:hover {
-      background: #ddd;
+      border-color: #fff;
+      background: #fff;
+      color: #000;
     }
     
     button:active {
@@ -103,7 +172,7 @@ const error = Astro.url.searchParams.get('error');
     .error-message {
       color: #ff3b30;
       font-size: 10px;
-      margin-top: -1rem;
+      font-weight: 500;
       margin-bottom: 1rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -114,6 +183,7 @@ const error = Astro.url.searchParams.get('error');
       padding-top: 2rem;
       border-top: 1px solid #333;
       font-size: 9px;
+      font-weight: 400;
       color: #666;
       text-align: center;
     }
@@ -124,6 +194,16 @@ const error = Astro.url.searchParams.get('error');
     <h1>&FRIENDS_EDITOR</h1>
     <div class="subtitle">AUTHENTICATION REQUIRED</div>
     
+    {error && (
+      <div class="error-message">{errorMessages[error] || '✗ ERROR'}</div>
+    )}
+    
+    <a href="/api/auth/google" class="google-btn">
+      [SIGN IN WITH GOOGLE]
+    </a>
+    
+    <div class="divider">OR</div>
+    
     <form method="POST">
       <label for="password">PASSWORD</label>
       <input 
@@ -132,19 +212,14 @@ const error = Astro.url.searchParams.get('error');
         name="password" 
         required 
         autocomplete="current-password"
-        autofocus
-        class={error ? 'error' : ''}
+        class={error === 'invalid' ? 'error' : ''}
       />
-      
-      {error === 'invalid' && (
-        <div class="error-message">✗ INVALID PASSWORD</div>
-      )}
       
       <button type="submit">[AUTHENTICATE]</button>
     </form>
     
     <div class="footer">
-      SESSION EXPIRES AFTER 7 DAYS
+      SESSION EXPIRES AFTER 7-30 DAYS
     </div>
   </div>
 </body>

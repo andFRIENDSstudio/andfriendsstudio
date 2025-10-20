@@ -1,11 +1,19 @@
+/* src/styles/editor.css */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+* {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
 /* Editor Layout */
 .editor-container {
   display: flex;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  font-family: monospace;
+  font-family: 'JetBrains Mono', monospace;
 }
+
 
 /* Left Side - Preview */
 .editor-preview {

@@ -4,19 +4,27 @@ import { defineMiddleware } from 'astro:middleware';
 const EDITOR_PASSWORD = import.meta.env.EDITOR_PASSWORD;
 
 export const onRequest = defineMiddleware(async (context, next) => {
-  const { pathname } = context;
+  const pathname = context.url?.pathname || '';
   
-  // Only protect /editor routes (not /editor/login)
-  if (pathname.startsWith('/editor') && pathname !== '/editor/login') {
-    const authCookie = context.cookies.get('editor-auth')?.value;
+  if (!pathname) {
+    return next();
+  }
+  
+  // Only protect /editor routes (not /editor/login or auth callbacks)
+  if (pathname.startsWith('/editor') && 
+      pathname !== '/editor/login' && 
+      !pathname.startsWith('/api/auth')) {
     
-    // Check if authenticated
-    if (authCookie !== EDITOR_PASSWORD) {
+    const passwordAuth = context.cookies.get('editor-auth')?.value;
+    const googleAuth = context.cookies.get('editor-auth-google')?.value;
+    
+    // Check if authenticated via either method
+    if (passwordAuth !== EDITOR_PASSWORD && !googleAuth) {
       return context.redirect('/editor/login');
     }
   }
   
-  // Handle login POST
+  // Handle password login POST
   if (pathname === '/editor/login' && context.request.method === 'POST') {
     const formData = await context.request.formData();
     const password = formData.get('password');
@@ -32,7 +40,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
       return context.redirect('/editor');
     }
     
-    // Wrong password
     return context.redirect('/editor/login?error=invalid');
   }
   
