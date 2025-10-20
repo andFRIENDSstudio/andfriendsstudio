@@ -11,6 +11,7 @@ interface Project {
   featured?: boolean;
   client?: string;
   url?: string;
+  displaySize?: 'narrow' | 'standard' | 'wide' | 'extra-wide';
 }
 
 export default function CustomEditor() {
@@ -160,6 +161,8 @@ export default function CustomEditor() {
     const updatedProjects = [...projects];
     updatedProjects[selectedIndex] = currentProject;
 
+    console.log('Saving projects:', updatedProjects);
+
     try {
       const response = await fetch('/api/projects', {
         method: 'POST',
@@ -167,15 +170,19 @@ export default function CustomEditor() {
         body: JSON.stringify({ projects: updatedProjects })
       });
 
+      const data = await response.json();
+      console.log('Save response:', data);
+
       if (response.ok) {
         setProjects(updatedProjects);
         alert('✓ SAVED');
       } else {
-        alert('✗ SAVE FAILED');
+        console.error('Save failed:', data);
+        alert(`✗ SAVE FAILED: ${data.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('Save error:', err);
-      alert('✗ SAVE FAILED');
+      alert(`✗ SAVE FAILED: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
@@ -262,7 +269,7 @@ export default function CustomEditor() {
           <div className="editor-card placeholder" />
           
           <div
-            className="editor-card active"
+            className={`editor-card active size-${currentProject.displaySize || 'standard'}`}
             data-title={currentProject.title}
             data-contributors={currentProject.contributors?.join(',')}
             data-year={getYear(currentProject.date)}
@@ -429,6 +436,27 @@ export default function CustomEditor() {
               })}
               placeholder="MOTION, INSTALLATION, GRAPHIC"
             />
+          </div>
+
+          {/* Display Size */}
+          <div className="editor-field">
+            <label className="editor-label">DISPLAY_SIZE [ASPECT_RATIO]</label>
+            <select
+              className="editor-select"
+              value={currentProject.displaySize || 'standard'}
+              onChange={(e) => setCurrentProject({
+                ...currentProject,
+                displaySize: e.target.value as 'narrow' | 'standard' | 'wide' | 'extra-wide'
+              })}
+            >
+              <option value="narrow">NARROW [9:16_PORTRAIT]</option>
+              <option value="standard">STANDARD [1:1_SQUARE]</option>
+              <option value="wide">WIDE [16:9_WIDESCREEN]</option>
+              <option value="extra-wide">CINEMASCOPE [2.39:1_ULTRA-WIDE]</option>
+            </select>
+            <div className="editor-hint">
+              CONTROLS_ASPECT_RATIO_IN_MARQUEE
+            </div>
           </div>
 
           {/* Action Buttons */}

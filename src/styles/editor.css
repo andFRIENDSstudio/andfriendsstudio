@@ -39,6 +39,23 @@
   cursor: none;
 }
 
+/* Size variants for preview */
+.editor-card.size-narrow {
+  width: 250px;
+}
+
+.editor-card.size-standard {
+  width: 300px;
+}
+
+.editor-card.size-wide {
+  width: 380px;
+}
+
+.editor-card.size-extra-wide {
+  width: 480px;
+}
+
 .editor-card.placeholder {
   background-color: #111;
   border: 1px solid #222;

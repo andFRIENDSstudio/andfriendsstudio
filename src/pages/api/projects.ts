@@ -4,6 +4,8 @@ import path from 'path';
 
 const projectsPath = path.join(process.cwd(), 'src/data/projects.json');
 
+export const prerender = false;
+
 export const GET: APIRoute = async () => {
   try {
     const data = await fs.readFile(projectsPath, 'utf-8');
