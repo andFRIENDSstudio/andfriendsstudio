@@ -46,24 +46,32 @@
   flex-shrink: 0;
   cursor: none;
 }
-
-/* Size variants for preview */
 .editor-card.size-narrow {
-  width: 250px;
+  width: 250px;  /* Roughly 9:16 portrait */
+  height: 444px; /* 250 * 16/9 */
 }
 
 .editor-card.size-standard {
-  width: 300px;
+  width: 420px;  /* 1:1 square, same as height */
+  height: 420px;
 }
 
 .editor-card.size-wide {
-  width: 380px;
+  width: 747px;  /* 16:9 widescreen */
+  height: 420px; /* 747 * 9/16 */
 }
 
 .editor-card.size-extra-wide {
-  width: 480px;
+  width: 840px;  /* ~2:1 cinemascope */
+  height: 420px; /* 840 / 2 */
 }
 
+/* Base card height stays the same */
+.editor-card {
+  height: 420px;
+  flex-shrink: 0;
+  cursor: none;
+}
 .editor-card.placeholder {
   background-color: #111;
   border: 1px solid #222;
@@ -396,4 +404,68 @@
 
 .image-preview:hover .image-overlay {
   opacity: 1;
+}
+/* Toggle switch styling */
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem;
+  background: #000;
+  border: 1px solid #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.toggle:hover {
+  border-color: #666;
+}
+
+.toggle.active {
+  border-color: #fff;
+  background: #111;
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.toggle.active .toggle-switch {
+  background: #fff;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  top: 2px;
+  left: 2px;
+  transition: all 0.3s;
+}
+
+.toggle.active .toggle-switch::after {
+  background: #000;
+  transform: translateX(20px);
+}
+
+.toggle-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.toggle.active .toggle-label {
+  color: #fff;
 }

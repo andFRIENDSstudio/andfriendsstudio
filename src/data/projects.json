@@ -12,7 +12,8 @@
         "installation"
       ],
       "url": "blink24_futerra",
-      "displaySize": "narrow"
+      "displaySize": "narrow",
+      "featured": true
     },
     {
       "title": "The Gathering at the Poet's Shack",

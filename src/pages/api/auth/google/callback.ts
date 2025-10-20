@@ -69,7 +69,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
       return redirect('/editor/login?error=unauthorized');
     }
     
-    // Store user info in cookie
+    // Store user info in cookie - DEFINE userData HERE
     const userData = {
       email: user.email,
       name: user.name,
@@ -83,7 +83,7 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
       path: '/',
       httpOnly: true,
       secure: import.meta.env.PROD,
-      sameSite: 'lax', // Changed from 'strict' - important for OAuth redirects
+      sameSite: 'lax' as any,
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
     
@@ -95,27 +95,3 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     return redirect('/editor/login?error=auth_failed');
   }
 };
-```
-
-### Key Changes:
-
-1. **Changed `sameSite` from `'strict'` to `'lax'`** - This is crucial! `strict` prevents cookies from being sent on redirects from external sites (like Google OAuth). `lax` allows it.
-
-2. **Added extensive logging** - Check your Vercel logs to see what's happening:
-   - Go to Vercel dashboard → Your project → Logs
-   - Try the Google login again
-   - Look for the console.log output
-
-3. **Added timestamp to user data** - Helps with debugging
-
----
-
-## Quick Test Steps:
-
-1. **Deploy these changes to Vercel**
-2. **Check Vercel Environment Variables:**
-```
-   GOOGLE_CLIENT_ID=your-client-id
-   GOOGLE_CLIENT_SECRET=your-secret
-   ALLOWED_EMAILS=your@email.com
-   SITE_URL=https://andfriendsstudio.vercel.app

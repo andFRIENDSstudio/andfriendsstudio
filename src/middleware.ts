@@ -19,11 +19,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
       
       if (password === EDITOR_PASSWORD) {
         context.cookies.set('editor-auth', EDITOR_PASSWORD, {
-          path: '/',
-          httpOnly: true,
-          secure: import.meta.env.PROD,
-          sameSite: 'lax', // Changed from 'strict'
-          maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
+        httpOnly: true,
+        secure: import.meta.env.PROD,
+        sameSite: 'lax' as any, // Add this
+        maxAge: 60 * 60 * 24 * 7,
         });
         return context.redirect('/editor');
       }

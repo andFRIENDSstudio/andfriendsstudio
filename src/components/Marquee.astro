@@ -1,4 +1,5 @@
 ---
+// src/components/Marquee.astro
 import projectsData from '../data/projects.json';
 const projects = projectsData.projects || [];
 
@@ -10,20 +11,172 @@ const getYear = (dateString) => {
 
 // Helper to determine card size based on aspect ratio or manual override
 const getCardSize = (project) => {
-    // If manually set, use that
     if (project.displaySize && ['narrow', 'standard', 'wide', 'extra-wide'].includes(project.displaySize)) {
         return project.displaySize;
     }
-    
-    // Default to standard if not set
     return 'standard';
 };
 
-// Smart grouping to create visual rhythm
+// Get "visual weight" of a size (for balancing)
+const getWeight = (size) => {
+    const weights = {
+        'narrow': 0.5,      // 28vh
+        'standard': 1,      // 50vh
+        'wide': 1.8,        // 89vh
+        'extra-wide': 2     // 100vh
+    };
+    return weights[size] || 1;
+};
+
+// Smart grouping algorithm
 const organizeProjects = (projects) => {
-    // For now, return as-is
-    // We can add shuffle/rhythm logic later
-    return projects;
+    if (projects.length === 0) return [];
+    
+    // Separate featured from non-featured
+    const featured = projects.filter(p => p.featured);
+    const nonFeatured = projects.filter(p => !p.featured);
+    
+    // Create a copy with size metadata for non-featured
+    const projectsWithMeta = nonFeatured.map(p => ({
+        ...p,
+        size: getCardSize(p),
+        weight: getWeight(getCardSize(p))
+    }));
+    
+    // Separate by size for strategic placement
+    const narrow = projectsWithMeta.filter(p => p.size === 'narrow');
+    const standard = projectsWithMeta.filter(p => p.size === 'standard');
+    const wide = projectsWithMeta.filter(p => p.size === 'wide');
+    const extraWide = projectsWithMeta.filter(p => p.size === 'extra-wide');
+    
+    const result = [];
+    let narrowIndex = 0;
+    let standardIndex = 0;
+    let wideIndex = 0;
+    let extraWideIndex = 0;
+    
+    // Target weight per "chunk" (balances visual density)
+    const targetChunkWeight = 3;
+    let currentWeight = 0;
+    
+    // Pattern: try to alternate between light and heavy, with variety
+    const patterns = [
+        // Pattern 1: Heavy, Light, Medium
+        () => {
+            if (extraWideIndex < extraWide.length) {
+                result.push(extraWide[extraWideIndex++]);
+                currentWeight += 2;
+            } else if (wideIndex < wide.length) {
+                result.push(wide[wideIndex++]);
+                currentWeight += 1.8;
+            }
+            
+            if (narrowIndex < narrow.length) {
+                result.push(narrow[narrowIndex++]);
+                currentWeight += 0.5;
+            }
+            
+            if (standardIndex < standard.length) {
+                result.push(standard[standardIndex++]);
+                currentWeight += 1;
+            }
+        },
+        
+        // Pattern 2: Light, Light, Heavy
+        () => {
+            if (narrowIndex < narrow.length) {
+                result.push(narrow[narrowIndex++]);
+                currentWeight += 0.5;
+            }
+            
+            if (standardIndex < standard.length) {
+                result.push(standard[standardIndex++]);
+                currentWeight += 1;
+            }
+            
+            if (wideIndex < wide.length) {
+                result.push(wide[wideIndex++]);
+                currentWeight += 1.8;
+            } else if (extraWideIndex < extraWide.length) {
+                result.push(extraWide[extraWideIndex++]);
+                currentWeight += 2;
+            }
+        },
+        
+        // Pattern 3: Medium, Heavy, Light
+        () => {
+            if (standardIndex < standard.length) {
+                result.push(standard[standardIndex++]);
+                currentWeight += 1;
+            }
+            
+            if (wideIndex < wide.length) {
+                result.push(wide[wideIndex++]);
+                currentWeight += 1.8;
+            }
+            
+            if (narrowIndex < narrow.length) {
+                result.push(narrow[narrowIndex++]);
+                currentWeight += 0.5;
+            }
+        },
+        
+        // Pattern 4: Two mediums
+        () => {
+            if (standardIndex < standard.length) {
+                result.push(standard[standardIndex++]);
+                currentWeight += 1;
+            }
+            
+            if (standardIndex < standard.length) {
+                result.push(standard[standardIndex++]);
+                currentWeight += 1;
+            }
+        }
+    ];
+    
+    let patternIndex = 0;
+    const totalNonFeatured = projectsWithMeta.length;
+    
+    // Apply patterns until all non-featured projects are placed
+    while (result.length < totalNonFeatured) {
+        const beforeLength = result.length;
+        
+        // Apply current pattern
+        patterns[patternIndex]();
+        
+        // If pattern didn't add anything, try next pattern
+        if (result.length === beforeLength) {
+            patternIndex = (patternIndex + 1) % patterns.length;
+            
+            // Fallback: just add whatever's left
+            if (narrowIndex < narrow.length) {
+                result.push(narrow[narrowIndex++]);
+            } else if (standardIndex < standard.length) {
+                result.push(standard[standardIndex++]);
+            } else if (wideIndex < wide.length) {
+                result.push(wide[wideIndex++]);
+            } else if (extraWideIndex < extraWide.length) {
+                result.push(extraWide[extraWideIndex++]);
+            }
+        }
+        
+        // Reset weight tracking when chunk is complete
+        if (currentWeight >= targetChunkWeight) {
+            currentWeight = 0;
+            patternIndex = (patternIndex + 1) % patterns.length;
+        }
+    }
+    
+    // FEATURED PROJECTS GO FIRST - add size metadata
+    const featuredWithMeta = featured.map(p => ({
+        ...p,
+        size: getCardSize(p),
+        weight: getWeight(getCardSize(p))
+    }));
+    
+    // Return featured first, then organized non-featured
+    return [...featuredWithMeta, ...result];
 };
 
 const organizedProjects = organizeProjects(projects);
@@ -32,7 +185,7 @@ const organizedProjects = organizeProjects(projects);
 <div class="marquee-wrapper">
     <div class="marquee-track">
         {organizedProjects.map((project) => {
-            const size = getCardSize(project);
+            const size = project.size || getCardSize(project);
             return (
                 <div 
                     class={`grey-box size-${size}`}
@@ -53,26 +206,23 @@ const organizedProjects = organizeProjects(projects);
         flex-shrink: 0;
     }
     
-    /* Fluid width sizes based on aspect ratios
-       Height is clamp(35vh, 3vw + 45vh, 65vh) - roughly 50vh on average
-       So we calculate widths relative to that */
     .grey-box.size-narrow {
-        width: 28vh; /* 9:16 portrait (50vh × 9/16 = 28vh) */
+        width: 28vh;
         min-width: 200px;
     }
     
     .grey-box.size-standard {
-        width: 50vh; /* 1:1 square (50vh × 1 = 50vh) */
+        width: 50vh;
         min-width: 350px;
     }
     
     .grey-box.size-wide {
-        width: 89vh; /* 16:9 widescreen (50vh × 16/9 = 89vh) */
+        width: 89vh;
         min-width: 620px;
     }
     
     .grey-box.size-extra-wide {
-        width: 100vh; /* 2:1 cinemascope (50vh × 2 = 100vh) */
+        width: 100vh;
         min-width: 700px;
     }
 </style>
