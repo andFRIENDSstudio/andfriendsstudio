@@ -90,13 +90,14 @@ union DocumentNode = Content | Folder
 type ContentProjects {
   title: String!
   description: String
-  date: String!
-  contributors: [String!]!
-  image: String!
+  date: String
+  contributors: [String]
+  image: String
   tags: [String]
   featured: Boolean
   client: String
   url: String
+  _preview: String
 }
 
 type Content implements Node & Document {
@@ -143,6 +144,7 @@ input ContentProjectsFilter {
   featured: BooleanFilter
   client: StringFilter
   url: StringFilter
+  _preview: StringFilter
 }
 
 input ContentFilter {
@@ -189,6 +191,7 @@ input ContentProjectsMutation {
   featured: Boolean
   client: String
   url: String
+  _preview: String
 }
 
 input ContentMutation {

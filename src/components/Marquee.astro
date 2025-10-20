@@ -1,6 +1,12 @@
 ---
 import projectsData from '../data/projects.json';
 const projects = projectsData.projects || [];
+
+// Helper to extract year from date string
+const getYear = (dateString) => {
+    if (!dateString) return '2024';
+    return new Date(dateString).getFullYear().toString();
+};
 ---
 
 <div class="marquee-wrapper">
@@ -10,7 +16,7 @@ const projects = projectsData.projects || [];
                 class="grey-box"
                 data-project={project.title}
                 data-contributors={project.contributors?.join(', ')}
-                data-client={project.client}
+                data-year={getYear(project.date)}
                 style={`background-image: url(${project.image}); background-size: cover; background-position: center;`}
             >
             </div>

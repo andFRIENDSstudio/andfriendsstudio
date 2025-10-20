@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { defineConfig } from "tinacms";
+import { ProjectPreview } from "./components/ProjectPreview";
 
 export default defineConfig({
   branch: "main",
@@ -62,20 +63,17 @@ export default defineConfig({
                 type: "datetime",
                 name: "date",
                 label: "Date",
-                required: true,
               },
               {
                 type: "string",
                 name: "contributors",
                 label: "Contributors",
                 list: true,
-                required: true,
               },
               {
                 type: "image",
                 name: "image",
                 label: "Project Image",
-                required: true,
               },
               {
                 type: "string",
@@ -98,6 +96,15 @@ export default defineConfig({
                 type: "string",
                 name: "url",
                 label: "Project URL",
+              },
+              // Custom preview field
+              {
+                type: "string",
+                name: "_preview",
+                label: " ",
+                ui: {
+                  component: ProjectPreview,
+                },
               },
             ],
           },

@@ -169,13 +169,14 @@ export type ContentProjects = {
   __typename?: 'ContentProjects';
   title: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
-  date: Scalars['String']['output'];
-  contributors: Array<Scalars['String']['output']>;
-  image: Scalars['String']['output'];
+  date?: Maybe<Scalars['String']['output']>;
+  contributors?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
+  image?: Maybe<Scalars['String']['output']>;
   tags?: Maybe<Array<Maybe<Scalars['String']['output']>>>;
   featured?: Maybe<Scalars['Boolean']['output']>;
   client?: Maybe<Scalars['String']['output']>;
   url?: Maybe<Scalars['String']['output']>;
+  _preview?: Maybe<Scalars['String']['output']>;
 };
 
 export type Content = Node & Document & {
@@ -223,6 +224,7 @@ export type ContentProjectsFilter = {
   featured?: InputMaybe<BooleanFilter>;
   client?: InputMaybe<StringFilter>;
   url?: InputMaybe<StringFilter>;
+  _preview?: InputMaybe<StringFilter>;
 };
 
 export type ContentFilter = {
@@ -317,20 +319,21 @@ export type ContentProjectsMutation = {
   featured?: InputMaybe<Scalars['Boolean']['input']>;
   client?: InputMaybe<Scalars['String']['input']>;
   url?: InputMaybe<Scalars['String']['input']>;
+  _preview?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type ContentMutation = {
   projects?: InputMaybe<Array<InputMaybe<ContentProjectsMutation>>>;
 };
 
-export type ContentPartsFragment = { __typename: 'Content', projects?: Array<{ __typename: 'ContentProjects', title: string, description?: string | null, date: string, contributors: Array<string>, image: string, tags?: Array<string | null> | null, featured?: boolean | null, client?: string | null, url?: string | null } | null> | null };
+export type ContentPartsFragment = { __typename: 'Content', projects?: Array<{ __typename: 'ContentProjects', title: string, description?: string | null, date?: string | null, contributors?: Array<string | null> | null, image?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, client?: string | null, url?: string | null, _preview?: string | null } | null> | null };
 
 export type ContentQueryVariables = Exact<{
   relativePath: Scalars['String']['input'];
 }>;
 
 
-export type ContentQuery = { __typename?: 'Query', content: { __typename: 'Content', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, projects?: Array<{ __typename: 'ContentProjects', title: string, description?: string | null, date: string, contributors: Array<string>, image: string, tags?: Array<string | null> | null, featured?: boolean | null, client?: string | null, url?: string | null } | null> | null } };
+export type ContentQuery = { __typename?: 'Query', content: { __typename: 'Content', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, projects?: Array<{ __typename: 'ContentProjects', title: string, description?: string | null, date?: string | null, contributors?: Array<string | null> | null, image?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, client?: string | null, url?: string | null, _preview?: string | null } | null> | null } };
 
 export type ContentConnectionQueryVariables = Exact<{
   before?: InputMaybe<Scalars['String']['input']>;
@@ -342,7 +345,7 @@ export type ContentConnectionQueryVariables = Exact<{
 }>;
 
 
-export type ContentConnectionQuery = { __typename?: 'Query', contentConnection: { __typename?: 'ContentConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'ContentConnectionEdges', cursor: string, node?: { __typename: 'Content', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, projects?: Array<{ __typename: 'ContentProjects', title: string, description?: string | null, date: string, contributors: Array<string>, image: string, tags?: Array<string | null> | null, featured?: boolean | null, client?: string | null, url?: string | null } | null> | null } | null } | null> | null } };
+export type ContentConnectionQuery = { __typename?: 'Query', contentConnection: { __typename?: 'ContentConnection', totalCount: number, pageInfo: { __typename?: 'PageInfo', hasPreviousPage: boolean, hasNextPage: boolean, startCursor: string, endCursor: string }, edges?: Array<{ __typename?: 'ContentConnectionEdges', cursor: string, node?: { __typename: 'Content', id: string, _sys: { __typename?: 'SystemInfo', filename: string, basename: string, hasReferences?: boolean | null, breadcrumbs: Array<string>, path: string, relativePath: string, extension: string }, projects?: Array<{ __typename: 'ContentProjects', title: string, description?: string | null, date?: string | null, contributors?: Array<string | null> | null, image?: string | null, tags?: Array<string | null> | null, featured?: boolean | null, client?: string | null, url?: string | null, _preview?: string | null } | null> | null } | null } | null> | null } };
 
 export const ContentPartsFragmentDoc = gql`
     fragment ContentParts on Content {
@@ -358,6 +361,7 @@ export const ContentPartsFragmentDoc = gql`
     featured
     client
     url
+    _preview
   }
 }
     `;

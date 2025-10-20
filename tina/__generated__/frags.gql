@@ -11,5 +11,6 @@ fragment ContentParts on Content {
     featured
     client
     url
+    _preview
   }
 }

@@ -146,15 +146,18 @@ html.lenis, html.lenis body {
     width: max-content;
     padding-right: 5vw;
     will-change: transform;
+    opacity: 0; /* Hidden initially to prevent flash */
+}
+
+.marquee-track.initialized {
+    opacity: 1;
 }
 
 .grey-box {
     background: #333;
-    flex-shrink: 0;.grey-box {
-  min-width: 300px;
-  min-height: 400px;
-}
-    
+    flex-shrink: 0;
+    min-width: 300px;
+    min-height: 400px;
 }
 
 .grey-box.tall {
@@ -172,7 +175,6 @@ html.lenis, html.lenis body {
     height: 100%;
 }
 
-/* Mobile & Tablet Responsive */
 /* Mobile & Tablet Responsive */
 @media (max-width: 768px) {
     body {
@@ -220,7 +222,7 @@ html.lenis, html.lenis body {
         height: auto;
         min-height: 0;
         flex: 1;
-        padding: 2rem 0; /* Increased from 1rem */
+        padding: 2rem 0;
         display: flex;
         align-items: center;
         overflow-x: scroll;
@@ -239,12 +241,13 @@ html.lenis, html.lenis body {
         display: flex;
         gap: 1rem;
         height: 100%;
-        max-height: 35vh; /* Reduced from 40vh to give more breathing room */
+        max-height: 35vh;
         width: max-content;
         padding: 0 1.5rem;
         will-change: transform;
         animation: marquee-mobile 30s linear infinite;
         flex-shrink: 0;
+        opacity: 1; /* Always visible on mobile */
     }
 
     .marquee-wrapper:active .marquee-track {
@@ -319,11 +322,11 @@ html.lenis, html.lenis body {
         }
 
         .marquee-wrapper {
-            padding: 3rem 0; /* More padding on wider screens */
+            padding: 3rem 0;
         }
 
         .marquee-track {
-            max-height: 45vh; /* More height on wider screens */
+            max-height: 45vh;
         }
 
         .logo-container {
