@@ -11,9 +11,8 @@
         "graphic",
         "installation"
       ],
-      "url": "blink24_futerra",
-      "displaySize": "narrow",
-      "featured": true
+      "featured": true,
+      "url": "blink24_futerra"
     },
     {
       "title": "The Gathering at the Poet's Shack",
@@ -25,8 +24,7 @@
       "contributors": [
         "Emma Todys"
       ],
-      "image": "/images/1760929941603-Screenshot_2025-10-08_at_1_07_57_AM.png",
-      "displaySize": "narrow"
+      "image": "/images/1760918878074-still9.png"
     },
     {
       "title": "Wisdom of Atlanta",
@@ -34,16 +32,14 @@
       "contributors": [
         "Shelly Boehm"
       ],
-      "image": "/images/1760918882881-Screenshot_2025-10-08_at_1_08_42_AM.png",
-      "displaySize": "extra-wide"
+      "image": "/images/1760918882881-Screenshot_2025-10-08_at_1_08_42_AM.png"
     },
     {
       "title": "Tyler, The Creator | WUSYANAME",
       "contributors": [
         "Mason Thompson"
       ],
-      "image": "/images/Screenshot_2025-10-08_at_1.06.05_AM.png",
-      "displaySize": "narrow"
+      "image": "/images/Screenshot_2025-10-08_at_1.06.05_AM.png"
     }
   ]
 }
