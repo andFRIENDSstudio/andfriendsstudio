@@ -3,7 +3,9 @@ import react from '@astrojs/react';
 import vercel from '@astrojs/vercel/serverless';
 
 export default defineConfig({
-  output: 'server', 
-  adapter: vercel(),
+  output: 'server',
+  adapter: vercel({
+    imageService: true,
+  }),
   integrations: [react()],
 });
