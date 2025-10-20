@@ -1,0 +1,151 @@
+---
+// src/pages/editor/login.astro
+const error = Astro.url.searchParams.get('error');
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>&FRIENDS Editor - Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    
+    .login-box {
+      background: #0a0a0a;
+      border: 1px solid #333;
+      padding: 3rem;
+      max-width: 400px;
+      width: 90%;
+    }
+    
+    h1 {
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      font-size: 10.5px;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    
+    label {
+      display: block;
+      font-size: 10.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 0.5rem;
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.7rem;
+      background: #000;
+      color: #fff;
+      border: 1px solid #333;
+      font-family: monospace;
+      font-size: 12.5px;
+      margin-bottom: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #fff;
+    }
+    
+    input.error {
+      border-color: #ff3b30;
+    }
+    
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #fff;
+      color: #000;
+      border: none;
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: #ddd;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .error-message {
+      color: #ff3b30;
+      font-size: 10px;
+      margin-top: -1rem;
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .footer {
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #333;
+      font-size: 9px;
+      color: #666;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h1>&FRIENDS_EDITOR</h1>
+    <div class="subtitle">AUTHENTICATION REQUIRED</div>
+    
+    <form method="POST">
+      <label for="password">PASSWORD</label>
+      <input 
+        type="password" 
+        id="password" 
+        name="password" 
+        required 
+        autocomplete="current-password"
+        autofocus
+        class={error ? 'error' : ''}
+      />
+      
+      {error === 'invalid' && (
+        <div class="error-message">✗ INVALID PASSWORD</div>
+      )}
+      
+      <button type="submit">[AUTHENTICATE]</button>
+    </form>
+    
+    <div class="footer">
+      SESSION EXPIRES AFTER 7 DAYS
+    </div>
+  </div>
+</body>
+</html>
