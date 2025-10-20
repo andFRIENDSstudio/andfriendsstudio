@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import client from '../tina/__generated__/client';
 
 interface Project {
   title: string;
@@ -30,17 +31,25 @@ export default function CustomEditor() {
   const textElementRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load projects
+  // Load projects from Tina
   useEffect(() => {
-    fetch('/api/projects')
-      .then(res => res.json())
-      .then(data => {
-        setProjects(data.projects || []);
-        if (data.projects && data.projects.length > 0) {
-          setCurrentProject(data.projects[0]);
+    const loadProjects = async () => {
+      try {
+        const result = await client.queries.content({
+          relativePath: 'projects.json'
+        });
+        
+        const projectsData = result.data.content.projects || [];
+        setProjects(projectsData as Project[]);
+        if (projectsData.length > 0) {
+          setCurrentProject(projectsData[0] as Project);
         }
-      })
-      .catch(err => console.error('Failed to load projects:', err));
+      } catch (err) {
+        console.error('Failed to load projects:', err);
+      }
+    };
+
+    loadProjects();
   }, []);
 
   // Update current project when selection changes
@@ -50,7 +59,7 @@ export default function CustomEditor() {
     }
   }, [selectedIndex, projects]);
 
-  // Cursor logic
+  // Cursor logic (unchanged)
   useEffect(() => {
     if (!marqueeRef.current || !cursorRef.current || !textElementRef.current) return;
 
@@ -92,14 +101,12 @@ export default function CustomEditor() {
       cursor.classList.add('pill-state');
       textElement.innerHTML = `<strong>${title}</strong>${attribution}`;
 
-      // Check if text needs scrolling
       setTimeout(() => {
-        const pillWidth = 280 - 24; // pill width minus padding
+        const pillWidth = 280 - 24;
         const textWidth = textElement.scrollWidth;
         
         if (textWidth > pillWidth) {
           textElement.classList.add('scrolling');
-          // Duplicate text for seamless loop
           const originalHTML = textElement.innerHTML;
           textElement.innerHTML = originalHTML + ' • ' + originalHTML;
         }
@@ -120,7 +127,6 @@ export default function CustomEditor() {
       cursor.classList.remove('pill-state');
       textElement.classList.remove('scrolling');
       
-      // Reset text to single copy
       const textContent = textElement.textContent || '';
       if (textContent.includes(' • ')) {
         const parts = textContent.split(' • ');
@@ -156,30 +162,23 @@ export default function CustomEditor() {
     };
   }, [projects, selectedIndex]);
 
+  // UPDATED: Save via Tina mutation instead of direct file write
   const handleSave = async () => {
     setIsSaving(true);
     const updatedProjects = [...projects];
     updatedProjects[selectedIndex] = currentProject;
 
-    console.log('Saving projects:', updatedProjects);
-
     try {
-      const response = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects: updatedProjects })
+      // Use Tina's mutation to update the content
+      await client.queries.updateContent({
+        relativePath: 'projects.json',
+        params: {
+          projects: updatedProjects
+        }
       });
 
-      const data = await response.json();
-      console.log('Save response:', data);
-
-      if (response.ok) {
-        setProjects(updatedProjects);
-        alert('✓ SAVED');
-      } else {
-        console.error('Save failed:', data);
-        alert(`✗ SAVE FAILED: ${data.error || 'Unknown error'}`);
-      }
+      setProjects(updatedProjects);
+      alert('✓ SAVED & COMMITTED TO GIT');
     } catch (err) {
       console.error('Save error:', err);
       alert(`✗ SAVE FAILED: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -268,7 +267,7 @@ export default function CustomEditor() {
           <div className="editor-card placeholder" />
           <div className="editor-card placeholder" />
           
-         <div
+          <div
             className={`editor-card active size-${currentProject.displaySize || 'standard'}`}
             data-title={currentProject.title}
             data-contributors={currentProject.contributors?.join(',')}
@@ -290,7 +289,7 @@ export default function CustomEditor() {
         </div>
       </div>
 
-      {/* Right Side - Form */}
+      {/* Right Side - Form (unchanged) */}
       <div className="editor-form">
         <div className="editor-header">
           <h1 className="editor-title">&FRIENDS_EDITOR</h1>
@@ -374,7 +373,7 @@ export default function CustomEditor() {
             />
           </div>
 
-           {/* Featured */}
+          {/* Featured */}
           <div className="editor-field">
             <label className="editor-label">
               <input
@@ -489,7 +488,7 @@ export default function CustomEditor() {
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving ? '[SAVING...]' : '[SAVE]'}
+              {isSaving ? '[SAVING...]' : '[SAVE & COMMIT]'}
             </button>
             <button className="editor-button secondary" onClick={handleAddProject}>
               [+]
