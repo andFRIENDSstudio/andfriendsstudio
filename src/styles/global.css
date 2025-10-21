@@ -19,7 +19,7 @@ body::-webkit-scrollbar {
 
 body {
     font-family: 'FK Grotesk', 'Manrope', sans-serif;
-    background: #0b0b0b; 
+    background: #000000; 
     color: #fff;
     overflow-x: hidden;
     min-height: 1200vh;
@@ -55,7 +55,7 @@ html.lenis, html.lenis body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between; /* Push top and bottom apart */
+    justify-content: space-between;
 }
 
 .top-bar {
@@ -83,8 +83,6 @@ html.lenis, html.lenis body {
     align-items: center;
     gap: 0.5rem;
 }
-
-
 
 .about-copy {
     max-width: 58vw;
@@ -143,7 +141,7 @@ html.lenis, html.lenis body {
     width: max-content;
     padding-right: 5vw;
     will-change: transform;
-    opacity: 0; /* Hidden initially to prevent flash */
+    opacity: 0;
 }
 
 .marquee-track.initialized {
@@ -174,138 +172,7 @@ html.lenis, html.lenis body {
     height: 100%;
 }
 
-/* Mobile & Tablet Responsive - FIXED */
-@media (max-width: 768px) {
-    body {
-        min-height: 100svh; /* Changed from vh to svh */
-        overflow: hidden;
-    }
-
-    .hero-state {
-        position: fixed;
-        height: 100svh; /* Changed from vh to svh */
-        width: 100vw;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        overflow: hidden;
-    }
-
-    .top-bar {
-        position: relative;
-        flex-direction: column; /* Stack vertically */
-        justify-content: flex-start;
-        gap: 1rem;
-        padding: 1.5rem;
-        flex-shrink: 0;
-        align-self: flex-start;
-    }
-
-    .links {
-        display: flex;
-        flex-direction: row;
-        gap: 1rem;
-    }
-
-    /* SHOW about copy on mobile */
-    .about-copy {
-        display: block; /* Changed from none */
-        max-width: 100%;
-        font-size: 0.75rem; /* Smaller for mobile */
-        line-height: 1.4;
-    }
-
-    /* Marquee - one strip, properly sized */
-    .marquee-wrapper {
-        position: relative;
-        top: auto;
-        transform: none;
-        left: 0;
-        width: 100vw;
-        height: auto;
-        min-height: 0;
-        flex: 1;
-        padding: 2rem 0;
-        display: flex;
-        align-items: center;
-        overflow-x: scroll;
-        overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x proximity;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    .marquee-wrapper::-webkit-scrollbar {
-        display: none;
-    }
-
-    .marquee-track {
-        display: flex;
-        gap: 1rem;
-        height: 100%;
-        max-height: 35svh; /* Changed from vh to svh */
-        width: max-content;
-        padding: 0 1.5rem;
-        will-change: transform;
-        animation: marquee-mobile 30s linear infinite;
-        flex-shrink: 0;
-        opacity: 1;
-    }
-
-    .marquee-wrapper:active .marquee-track {
-        animation-play-state: paused;
-    }
-
-    @keyframes marquee-mobile {
-        0% {
-            transform: translateX(0);
-        }
-        100% {
-            transform: translateX(-50%);
-        }
-    }
-
-    .grey-box {
-        scroll-snap-align: center;
-        flex-shrink: 0;
-        border-radius: 8px; /* Add rounded corners */
-    }
-
-   .grey-box.tall,
-    .grey-box.wide,
-    .grey-box.square {
-        width: 70vw;
-        min-width: 70vw;
-        height: 70vw; /* Square aspect ratio */
-    }
-
-    .logo-container {
-        position: relative;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        padding: 1.5rem;
-        transform: none !important;
-        clip-path: none !important;
-        scale: 1 !important;
-        flex-shrink: 0;
-        align-self: flex-end;
-    }
-
-    .footer-bar {
-        position: relative;
-        width: 100%;
-        flex-direction: row;
-        justify-content: space-between;
-        gap: 0;
-        align-items: center;
-        padding: 1.5rem;
-        font-size: 0.75rem;
-        flex-shrink: 0;
-        align-self: flex-end;
-    }
-/* Mobile & Tablet Responsive - FIXED */
+/* Mobile & Tablet Responsive */
 @media (max-width: 768px) {
     body {
         min-height: 100svh;
@@ -318,7 +185,7 @@ html.lenis, html.lenis body {
         width: 100vw;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: flex-start;
         overflow: hidden;
     }
 
@@ -353,7 +220,7 @@ html.lenis, html.lenis body {
         width: 100vw;
         height: auto;
         min-height: 0;
-        flex: 1;
+        flex: 0 0 auto;
         padding: 2rem 0;
         display: flex;
         align-items: center;
@@ -363,6 +230,7 @@ html.lenis, html.lenis body {
         scroll-snap-type: x proximity;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        margin-bottom: auto;
     }
 
     .marquee-wrapper::-webkit-scrollbar {
@@ -398,7 +266,7 @@ html.lenis, html.lenis body {
     .grey-box {
         scroll-snap-align: center;
         flex-shrink: 0;
-        border-radius: 1.5rem;
+        border-radius: 2rem;
     }
 
     .grey-box.tall,
@@ -416,11 +284,11 @@ html.lenis, html.lenis body {
         width: 100%;
         padding: 1.5rem;
         padding-top: 0;
+        margin-top: auto;
         transform: none !important;
         clip-path: none !important;
         scale: 1 !important;
         flex-shrink: 0;
-        align-self: flex-end;
     }
 
     .footer-bar {
@@ -433,7 +301,6 @@ html.lenis, html.lenis body {
         padding: 1.5rem;
         font-size: 0.75rem;
         flex-shrink: 0;
-        align-self: flex-end;
     }
 
     @media (min-width: 480px) and (max-width: 1024px) {
