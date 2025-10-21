@@ -260,16 +260,17 @@ html.lenis, html.lenis body {
     .grey-box {
         scroll-snap-align: center;
         flex-shrink: 0;
-        border-radius: 2rem;
+        border-radius: 1.5rem;
     }
 
     .grey-box.tall,
     .grey-box.wide,
     .grey-box.square {
-        width: 55vw;
-        min-width: 55vw;
-        height: 55vw;
-        max-height: 30svh;
+        width: 40vw !important;
+        min-width: 40vw !important;
+        height: 40vw !important;
+        max-width: 40vw !important;
+        max-height: 40vw !important;
     }
 
     .logo-container {
