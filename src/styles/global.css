@@ -277,7 +277,7 @@ html.lenis, html.lenis body {
     .grey-box.square {
         width: 70vw;
         min-width: 70vw;
-        height: 100%;
+        height: 70vw; /* Square aspect ratio */
     }
 
     .logo-container {
