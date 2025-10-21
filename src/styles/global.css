@@ -19,7 +19,7 @@ body::-webkit-scrollbar {
 
 body {
     font-family: 'FK Grotesk', 'Manrope', sans-serif;
-    background: #000;
+    background: #0b0b0b; 
     color: #fff;
     overflow-x: hidden;
     min-height: 1200vh;
