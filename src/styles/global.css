@@ -213,11 +213,11 @@ html.lenis, html.lenis body {
     .marquee-wrapper {
         position: absolute;
         top: 58%;
-        transform: translateY(-50%);
+        transform: translateY(-50%) scaleY(0.7);
+        transform-origin: center;
         left: 0;
         width: 100vw;
         height: auto;
-        max-height: 22svh;
         padding: 0.5rem 0;
         display: flex;
         align-items: center;
@@ -237,7 +237,6 @@ html.lenis, html.lenis body {
         display: flex;
         gap: 0.75rem;
         height: auto;
-        max-height: 20svh;
         width: max-content;
         padding: 0.5rem 1rem;
         will-change: transform;
@@ -268,11 +267,12 @@ html.lenis, html.lenis body {
     .grey-box.tall,
     .grey-box.wide,
     .grey-box.square {
-        width: 35vw !important;
-        min-width: 35vw !important;
-        height: 28vw !important;
-        max-width: 35vw !important;
-        max-height: 28vw !important;
+        width: auto !important;
+        min-width: auto !important;
+        height: 18svh !important;
+        max-width: none !important;
+        max-height: 18svh !important;
+        aspect-ratio: 1 / 1 !important;
     }
 
     .logo-container {
