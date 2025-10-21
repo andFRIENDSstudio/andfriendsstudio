@@ -185,7 +185,7 @@ html.lenis, html.lenis body {
         width: 100vw;
         display: flex;
         flex-direction: column;
-        justify-content: flex-start;
+        justify-content: space-between;
         overflow: hidden;
     }
 
@@ -196,7 +196,6 @@ html.lenis, html.lenis body {
         gap: 1rem;
         padding: 1.5rem;
         flex-shrink: 0;
-        align-self: flex-start;
     }
 
     .links {
@@ -220,7 +219,7 @@ html.lenis, html.lenis body {
         width: 100vw;
         height: auto;
         min-height: 0;
-        flex: 0 0 auto;
+        flex: 1;
         padding: 2rem 0;
         display: flex;
         align-items: center;
@@ -230,7 +229,6 @@ html.lenis, html.lenis body {
         scroll-snap-type: x proximity;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        margin-bottom: auto;
     }
 
     .marquee-wrapper::-webkit-scrollbar {
@@ -282,9 +280,8 @@ html.lenis, html.lenis body {
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 1.5rem;
-        padding-top: 0;
-        margin-top: auto;
+        padding: 0 1.5rem;
+        padding-bottom: 1rem;
         transform: none !important;
         clip-path: none !important;
         scale: 1 !important;
@@ -299,6 +296,7 @@ html.lenis, html.lenis body {
         gap: 0;
         align-items: center;
         padding: 1.5rem;
+        padding-top: 0;
         font-size: 0.75rem;
         flex-shrink: 0;
     }
