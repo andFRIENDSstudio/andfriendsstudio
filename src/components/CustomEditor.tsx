@@ -26,6 +26,11 @@ export default function CustomEditor() {
   const [saveStatus, setSaveStatus] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   
+  // BATCH EDITING STATE
+  const [originalProjects, setOriginalProjects] = useState<Project[]>([]); // Snapshot of saved state
+  const [dirtyIndices, setDirtyIndices] = useState<Set<number>>(new Set()); // Track which projects changed
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
   const marqueeRef = useRef<HTMLDivElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const textElementRef = useRef<HTMLDivElement>(null);
@@ -37,6 +42,7 @@ export default function CustomEditor() {
       .then(res => res.json())
       .then(data => {
         setProjects(data.projects || []);
+        setOriginalProjects(JSON.parse(JSON.stringify(data.projects || []))); // Deep copy
         if (data.projects && data.projects.length > 0) {
           setCurrentProject(data.projects[0]);
         }
@@ -50,6 +56,74 @@ export default function CustomEditor() {
       setCurrentProject(projects[selectedIndex]);
     }
   }, [selectedIndex, projects]);
+
+  // Sync current project changes to projects array
+  useEffect(() => {
+    if (!projects[selectedIndex]) return;
+    const updatedProjects = [...projects];
+    updatedProjects[selectedIndex] = currentProject;
+    setProjects(updatedProjects);
+  }, [currentProject]);
+
+  // Check if current project has unsaved changes
+  useEffect(() => {
+    if (!originalProjects[selectedIndex]) return;
+    
+    const isDirty = JSON.stringify(currentProject) !== JSON.stringify(originalProjects[selectedIndex]);
+    
+    if (isDirty) {
+      setDirtyIndices(prev => new Set(prev).add(selectedIndex));
+    } else {
+      setDirtyIndices(prev => {
+        const next = new Set(prev);
+        next.delete(selectedIndex);
+        return next;
+      });
+    }
+    
+    setHasUnsavedChanges(dirtyIndices.size > 0 || isDirty);
+  }, [currentProject, originalProjects, selectedIndex, dirtyIndices.size]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CMD+SHIFT+S or CTRL+SHIFT+S - Save
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault();
+        if (hasUnsavedChanges && !isSaving) {
+          handleSave();
+        }
+      }
+      
+      // CMD+SHIFT+N or CTRL+SHIFT+N - New project
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        handleAddProject();
+      }
+      
+      // CMD+SHIFT+D or CTRL+SHIFT+D - Discard changes
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'D' && hasUnsavedChanges) {
+        e.preventDefault();
+        handleDiscardChanges();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasUnsavedChanges, isSaving]);
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Cursor logic
   useEffect(() => {
@@ -158,17 +232,14 @@ export default function CustomEditor() {
   const handleSave = async () => {
     setIsSaving(true);
     setSaveStatus('COMMITTING TO GITHUB...');
-    
-    const updatedProjects = [...projects];
-    updatedProjects[selectedIndex] = currentProject;
 
-    console.log('Saving projects:', updatedProjects);
+    console.log('Saving projects:', projects);
 
     try {
       const response = await fetch('/api/save-projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projects: updatedProjects })
+        body: JSON.stringify({ projects })
       });
 
       const data = await response.json();
@@ -177,13 +248,13 @@ export default function CustomEditor() {
       if (response.ok) {
         setSaveStatus('TRIGGERING VERCEL BUILD...');
         
-        // Wait a bit to show the status
         await new Promise(resolve => setTimeout(resolve, 1500));
         
-        setProjects(updatedProjects);
+        setOriginalProjects(JSON.parse(JSON.stringify(projects))); // Reset snapshot
+        setDirtyIndices(new Set()); // Clear all dirty flags
+        setHasUnsavedChanges(false);
         setSaveStatus('✓ SAVED! SITE WILL UPDATE IN ~2 MIN');
         
-        // Clear status after 5 seconds
         setTimeout(() => setSaveStatus(''), 5000);
       } else {
         console.error('Save failed:', data);
@@ -206,16 +277,44 @@ export default function CustomEditor() {
       tags: [],
       date: new Date().toISOString()
     };
-    setProjects([...projects, newProject]);
+    const updatedProjects = [...projects, newProject];
+    setProjects(updatedProjects);
     setSelectedIndex(projects.length);
     setCurrentProject(newProject);
+    
+    // Mark new project as dirty
+    setDirtyIndices(prev => new Set(prev).add(projects.length));
+    setHasUnsavedChanges(true);
   };
 
   const handleDeleteProject = () => {
     if (confirm('DELETE PROJECT? [Y/N]')) {
       const updatedProjects = projects.filter((_, i) => i !== selectedIndex);
       setProjects(updatedProjects);
+      
+      // Update dirty indices (shift down indices after deletion)
+      const newDirty = new Set<number>();
+      dirtyIndices.forEach(idx => {
+        if (idx < selectedIndex) {
+          newDirty.add(idx);
+        } else if (idx > selectedIndex) {
+          newDirty.add(idx - 1);
+        }
+      });
+      setDirtyIndices(newDirty);
+      
       setSelectedIndex(Math.max(0, selectedIndex - 1));
+      setHasUnsavedChanges(newDirty.size > 0);
+    }
+  };
+
+  const handleDiscardChanges = () => {
+    if (confirm('DISCARD ALL CHANGES? [Y/N]')) {
+      // Reset to original saved state
+      setProjects(JSON.parse(JSON.stringify(originalProjects)));
+      setCurrentProject(originalProjects[selectedIndex]);
+      setDirtyIndices(new Set());
+      setHasUnsavedChanges(false);
     }
   };
 
@@ -316,6 +415,7 @@ export default function CustomEditor() {
           <h1 className="editor-title">&FRIENDS_EDITOR</h1>
           <div className="editor-subtitle">
             [{selectedIndex + 1}/{projects.length}] PROJECTS
+            {hasUnsavedChanges && <span style={{ color: '#ff3b30' }}> • {dirtyIndices.size} UNSAVED</span>}
           </div>
         </div>
 
@@ -330,7 +430,7 @@ export default function CustomEditor() {
             >
               {projects.map((project, i) => (
                 <option key={i} value={i}>
-                  [{String(i + 1).padStart(2, '0')}] {project.title || `PROJECT_${i + 1}`}
+                  {dirtyIndices.has(i) ? '● ' : ''}[{String(i + 1).padStart(2, '0')}] {project.title || `PROJECT_${i + 1}`}
                 </option>
               ))}
             </select>
@@ -370,7 +470,6 @@ export default function CustomEditor() {
               className="editor-input"
               value={currentProject.contributors?.join(', ') || ''}
               onChange={(e) => {
-                // Only split and process when there's actually a comma
                 const rawValue = e.target.value;
                 if (rawValue.includes(',')) {
                   setCurrentProject({
@@ -378,7 +477,6 @@ export default function CustomEditor() {
                     contributors: rawValue.split(',').map(c => c.trim()).filter(Boolean)
                   });
                 } else {
-                  // If no comma, treat as single contributor (allows spaces)
                   setCurrentProject({
                     ...currentProject,
                     contributors: rawValue ? [rawValue] : []
@@ -386,7 +484,6 @@ export default function CustomEditor() {
                 }
               }}
               onBlur={(e) => {
-                // On blur, ensure proper formatting
                 const value = e.target.value;
                 if (value && !value.includes(',')) {
                   setCurrentProject({
@@ -529,9 +626,9 @@ export default function CustomEditor() {
             <button
               className="editor-button primary"
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || !hasUnsavedChanges}
             >
-              {isSaving ? '[SAVING...]' : '[SAVE & COMMIT]'}
+              {isSaving ? '[SAVING...]' : hasUnsavedChanges ? `[SAVE ${dirtyIndices.size} CHANGE${dirtyIndices.size > 1 ? 'S' : ''}]` : '[NO CHANGES]'}
             </button>
             <button className="editor-button secondary" onClick={handleAddProject}>
               [+]
@@ -540,13 +637,28 @@ export default function CustomEditor() {
               [DEL]
             </button>
           </div>
+          
+          {/* Discard button - only show when there are changes */}
+          {hasUnsavedChanges && (
+            <button
+              className="editor-button secondary"
+              onClick={handleDiscardChanges}
+              style={{ width: '100%', marginTop: '0.5rem' }}
+            >
+              [DISCARD ALL CHANGES]
+            </button>
+          )}
 
           {/* Info panel */}
           <div className="editor-info">
-            <div>SHORTCUTS:</div>
-            <div>CMD+S → SAVE</div>
-            <div>CMD+N → NEW_PROJECT</div>
-            <div>ESC → CANCEL_CHANGES</div>
+            <div>BATCH EDITING MODE:</div>
+            <div>• EDIT MULTIPLE PROJECTS</div>
+            <div>• ONE COMMIT FOR ALL CHANGES</div>
+            <div>• DIRTY PROJECTS MARKED WITH ●</div>
+            <div style={{ marginTop: '0.5rem' }}>SHORTCUTS:</div>
+            <div>CMD+SHIFT+S → SAVE</div>
+            <div>CMD+SHIFT+N → NEW_PROJECT</div>
+            <div>CMD+SHIFT+D → DISCARD_CHANGES</div>
           </div>
         </div>
       </div>
