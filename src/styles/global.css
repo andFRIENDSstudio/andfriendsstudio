@@ -212,12 +212,12 @@ html.lenis, html.lenis body {
 
     .marquee-wrapper {
         position: absolute;
-        top: 55%;
+        top: 58%;
         transform: translateY(-50%);
         left: 0;
         width: 100vw;
         height: auto;
-        padding: 1rem 0;
+        padding: 0.5rem 0;
         display: flex;
         align-items: center;
         overflow-x: scroll;
@@ -234,10 +234,10 @@ html.lenis, html.lenis body {
 
     .marquee-track {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
         height: auto;
         width: max-content;
-        padding: 1rem 1.25rem;
+        padding: 0.5rem 1rem;
         will-change: transform;
         animation: marquee-mobile 60s linear infinite;
         flex-shrink: 0;
@@ -260,17 +260,17 @@ html.lenis, html.lenis body {
     .grey-box {
         scroll-snap-align: center;
         flex-shrink: 0;
-        border-radius: 1.5rem;
+        border-radius: 1.25rem;
     }
 
     .grey-box.tall,
     .grey-box.wide,
     .grey-box.square {
-        width: 40vw !important;
-        min-width: 40vw !important;
-        height: 40vw !important;
-        max-width: 40vw !important;
-        max-height: 40vw !important;
+        width: 35vw !important;
+        min-width: 35vw !important;
+        height: 28vw !important;
+        max-width: 35vw !important;
+        max-height: 28vw !important;
     }
 
     .logo-container {
