@@ -362,17 +362,39 @@ export default function CustomEditor() {
             />
           </div>
 
-          {/* Contributors */}
+        {/* Contributors */}
           <div className="editor-field">
             <label className="editor-label">CONTRIBUTORS [COMMA_SEPARATED]</label>
             <input
               type="text"
               className="editor-input"
               value={currentProject.contributors?.join(', ') || ''}
-              onChange={(e) => setCurrentProject({
-                ...currentProject,
-                contributors: e.target.value.split(',').map(c => c.trim()).filter(Boolean)
-              })}
+              onChange={(e) => {
+                // Only split and process when there's actually a comma
+                const rawValue = e.target.value;
+                if (rawValue.includes(',')) {
+                  setCurrentProject({
+                    ...currentProject,
+                    contributors: rawValue.split(',').map(c => c.trim()).filter(Boolean)
+                  });
+                } else {
+                  // If no comma, treat as single contributor (allows spaces)
+                  setCurrentProject({
+                    ...currentProject,
+                    contributors: rawValue ? [rawValue] : []
+                  });
+                }
+              }}
+              onBlur={(e) => {
+                // On blur, ensure proper formatting
+                const value = e.target.value;
+                if (value && !value.includes(',')) {
+                  setCurrentProject({
+                    ...currentProject,
+                    contributors: [value.trim()].filter(Boolean)
+                  });
+                }
+              }}
               placeholder="MASON_THOMPSON, JANE_DOE"
             />
             <div className="editor-hint">
