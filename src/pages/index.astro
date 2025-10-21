@@ -3,6 +3,7 @@ import Logo from '../components/Logo.astro';
 import Marquee from '../components/Marquee.astro';
 import CustomCursor from '../components/CustomCursor.astro';
 import ScrollAnimations from '../components/ScrollAnimations.astro';
+import ScrollHint from '../components/ScrollHint.astro';
 import '../styles/global.css';
 
 const siteSettings = {
@@ -23,8 +24,20 @@ const siteSettings = {
     <div class="hero-state">
         <div class="top-bar">
             <div class="links">
-                <a href={`mailto:${siteSettings.email}`}>Email</a>
-                <a href={`https://instagram.com/${siteSettings.instagram}`} target="_blank">Instagram</a>
+                <a href={`mailto:${siteSettings.email}`}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 17L17 7"></path>
+                        <path d="M7 7h10v10"></path>
+                    </svg>
+                    Email
+                </a>
+                <a href={`https://instagram.com/${siteSettings.instagram}`} target="_blank">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M7 17L17 7"></path>
+                        <path d="M7 7h10v10"></path>
+                    </svg>
+                    Instagram
+                </a>
             </div>
             <div class="about-copy">
                 {siteSettings.aboutCopy}
@@ -41,8 +54,9 @@ const siteSettings = {
             <div>All Rights Reserved</div>
         </div>
     </div>
-
+    <ScrollHint />
     <CustomCursor />
     <ScrollAnimations />
+    
 </body>
 </html>

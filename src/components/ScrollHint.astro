@@ -76,7 +76,7 @@
             
             const logoShrinkEnd = pageHeight * gsap.utils.interpolate(0.75, 0.65, widthRatio);
             // Marquee starts at same time as logo shrink
-            const marqueeStart = 0;
+            const marqueeStart = 0; // Changed from pageHeight * 0.25-0.35
 
             // Logo scale - scrubs with scroll
             const logoTimeline = gsap.timeline({
@@ -111,22 +111,19 @@
                 }
             });
 
-            // SCROLL HINT clip path - same timing as logo (only if element exists)
-            const scrollHint = document.querySelector('.scroll-hint');
-            if (scrollHint) {
-                gsap.to('.scroll-hint', {
-                    clipPath: 'inset(0 100% 0 0)',
-                    duration: TIMING.clipDuration,
-                    ease: TIMING.clipEase,
-                    scrollTrigger: {
-                        trigger: 'body',
-                        start: `${logoShrinkEnd * TIMING.clipTriggerPoint}vh top`,
-                        end: `${logoShrinkEnd * TIMING.clipTriggerPoint + 10}vh top`,
-                        toggleActions: 'play none reverse none',
-                        invalidateOnRefresh: true,
-                    }
-                });
-            }
+            // SCROLL HINT clip path - same timing as logo
+            gsap.to('.scroll-hint', {
+                clipPath: 'inset(0 100% 0 0)',
+                duration: TIMING.clipDuration,
+                ease: TIMING.clipEase,
+                scrollTrigger: {
+                    trigger: 'body',
+                    start: `${logoShrinkEnd * TIMING.clipTriggerPoint}vh top`,
+                    end: `${logoShrinkEnd * TIMING.clipTriggerPoint + 10}vh top`,
+                    toggleActions: 'play none reverse none',
+                    invalidateOnRefresh: true,
+                }
+            });
 
             // Marquee: slides in at same time as logo shrinks, completes at page end
             gsap.fromTo('.marquee-track',
@@ -158,11 +155,7 @@
         // ENTRY ANIMATION: Clip-path reveal on page load
         // Set initial clipped state immediately to prevent flash
         gsap.set('.logo-container', { clipPath: 'inset(0 100% 0 0)' });
-        
-        const scrollHintEl = document.querySelector('.scroll-hint');
-        if (scrollHintEl) {
-            gsap.set('.scroll-hint', { clipPath: 'inset(0 100% 0 0)' });
-        }
+        gsap.set('.scroll-hint', { clipPath: 'inset(0 100% 0 0)' });
         
         // Then animate to fully revealed
         gsap.to('.logo-container', {
@@ -172,14 +165,12 @@
             delay: TIMING.entryDelay
         });
 
-        if (scrollHintEl) {
-            gsap.to('.scroll-hint', {
-                clipPath: 'inset(0 0% 0 0)',
-                duration: TIMING.entryDuration,
-                ease: TIMING.entryEase,
-                delay: TIMING.entryDelay
-            });
-        }
+        gsap.to('.scroll-hint', {
+            clipPath: 'inset(0 0% 0 0)',
+            duration: TIMING.entryDuration,
+            ease: TIMING.entryEase,
+            delay: TIMING.entryDelay
+        });
 
         const lenis = new Lenis({
             duration: 1.2,
@@ -207,19 +198,14 @@
                 // Kill all scroll triggers
                 ScrollTrigger.getAll().forEach(st => st.kill());
                 
-                // Reset logo to default state before recalculating
+                // Reset logo and scroll hint to default state before recalculating
                 gsap.set('.logo-container', { 
                     scale: 1, 
                     clipPath: 'inset(0 0 0 0)' 
                 });
-                
-                // Reset scroll hint if it exists
-                const scrollHintResize = document.querySelector('.scroll-hint');
-                if (scrollHintResize) {
-                    gsap.set('.scroll-hint', { 
-                        clipPath: 'inset(0 0 0 0)' 
-                    });
-                }
+                gsap.set('.scroll-hint', { 
+                    clipPath: 'inset(0 0 0 0)' 
+                });
                 
                 // Recalculate and refresh
                 setupAnimations();
