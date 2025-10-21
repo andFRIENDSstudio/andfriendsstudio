@@ -272,7 +272,7 @@ html.lenis, html.lenis body {
         border-radius: 8px; /* Add rounded corners */
     }
 
-    .grey-box.tall,
+   .grey-box.tall,
     .grey-box.wide,
     .grey-box.square {
         width: 70vw;
