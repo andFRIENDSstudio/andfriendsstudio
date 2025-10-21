@@ -183,9 +183,7 @@ html.lenis, html.lenis body {
         position: fixed;
         height: 100svh;
         width: 100vw;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        display: block;
         overflow: hidden;
     }
 
@@ -195,7 +193,7 @@ html.lenis, html.lenis body {
         justify-content: flex-start;
         gap: 1rem;
         padding: 1.5rem;
-        flex-shrink: 0;
+        display: flex;
     }
 
     .links {
@@ -207,19 +205,17 @@ html.lenis, html.lenis body {
     .about-copy {
         display: block;
         max-width: 100%;
-        font-size: 0.75rem;
-        line-height: 1.4;
+        font-size: 0.875rem;
+        line-height: 1.5;
     }
 
     .marquee-wrapper {
-        position: relative;
-        top: auto;
-        transform: none;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
         left: 0;
         width: 100vw;
         height: auto;
-        min-height: 0;
-        flex: 1;
         padding: 2rem 0;
         display: flex;
         align-items: center;
@@ -276,29 +272,28 @@ html.lenis, html.lenis body {
     }
 
     .logo-container {
-        position: relative;
-        bottom: 0;
+        position: absolute;
+        bottom: 5rem;
         left: 0;
         width: 100%;
         padding: 0 1.5rem;
-        padding-bottom: 1rem;
         transform: none !important;
         clip-path: none !important;
         scale: 1 !important;
-        flex-shrink: 0;
     }
 
     .footer-bar {
-        position: relative;
+        position: absolute;
+        bottom: 0;
+        left: 0;
         width: 100%;
         flex-direction: row;
+        display: flex;
         justify-content: space-between;
         gap: 0;
         align-items: center;
         padding: 1.5rem;
-        padding-top: 0;
         font-size: 0.75rem;
-        flex-shrink: 0;
     }
 
     @media (min-width: 480px) and (max-width: 1024px) {
