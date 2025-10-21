@@ -23,6 +23,7 @@ export default function CustomEditor() {
     tags: []
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   
   const marqueeRef = useRef<HTMLDivElement>(null);
@@ -153,9 +154,11 @@ export default function CustomEditor() {
     };
   }, [projects, selectedIndex]);
 
-  // Save via GitHub API
+  // Save via GitHub API with progress updates
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveStatus('COMMITTING TO GITHUB...');
+    
     const updatedProjects = [...projects];
     updatedProjects[selectedIndex] = currentProject;
 
@@ -172,15 +175,25 @@ export default function CustomEditor() {
       console.log('Save response:', data);
 
       if (response.ok) {
+        setSaveStatus('TRIGGERING VERCEL BUILD...');
+        
+        // Wait a bit to show the status
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         setProjects(updatedProjects);
-        alert('✓ SAVED & COMMITTED TO GITHUB');
+        setSaveStatus('✓ SAVED! SITE WILL UPDATE IN ~2 MIN');
+        
+        // Clear status after 5 seconds
+        setTimeout(() => setSaveStatus(''), 5000);
       } else {
         console.error('Save failed:', data);
-        alert(`✗ SAVE FAILED: ${data.error || 'Unknown error'}`);
+        setSaveStatus(`✗ SAVE FAILED: ${data.error || 'Unknown error'}`);
+        setTimeout(() => setSaveStatus(''), 5000);
       }
     } catch (err) {
       console.error('Save error:', err);
-      alert(`✗ SAVE FAILED: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setSaveStatus(`✗ SAVE FAILED: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setTimeout(() => setSaveStatus(''), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -221,7 +234,9 @@ export default function CustomEditor() {
         const data = await response.json();
         setCurrentProject({ ...currentProject, image: data.path });
       } else {
-        alert('✗ UPLOAD FAILED');
+        const errorData = await response.json();
+        console.error('Upload failed:', errorData);
+        alert(`✗ UPLOAD FAILED: ${errorData.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('Upload error:', err);
@@ -260,6 +275,13 @@ export default function CustomEditor() {
 
   return (
     <div className="editor-container">
+      {/* Save Status Toast */}
+      {saveStatus && (
+        <div className="save-status-toast">
+          {saveStatus}
+        </div>
+      )}
+
       {/* Left Side - Marquee Preview */}
       <div className="editor-preview" ref={marqueeRef}>
         <div className="editor-marquee">
