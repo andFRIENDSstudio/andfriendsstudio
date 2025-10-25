@@ -49,7 +49,7 @@
             
             // Entry animation on page load
             entryDuration: 1.5,
-            entryDelay: 0.3,
+            entryDelay: 0,
             entryEase: 'power2.out',
         };
         // ========================================
@@ -111,23 +111,6 @@
                 }
             });
 
-            // SCROLL HINT clip path - same timing as logo (only if element exists)
-            const scrollHint = document.querySelector('.scroll-hint');
-            if (scrollHint) {
-                gsap.to('.scroll-hint', {
-                    clipPath: 'inset(0 100% 0 0)',
-                    duration: TIMING.clipDuration,
-                    ease: TIMING.clipEase,
-                    scrollTrigger: {
-                        trigger: 'body',
-                        start: `${logoShrinkEnd * TIMING.clipTriggerPoint}vh top`,
-                        end: `${logoShrinkEnd * TIMING.clipTriggerPoint + 10}vh top`,
-                        toggleActions: 'play none reverse none',
-                        invalidateOnRefresh: true,
-                    }
-                });
-            }
-
             // Marquee: slides in at same time as logo shrinks, completes at page end
             gsap.fromTo('.marquee-track',
                 { 
@@ -162,12 +145,7 @@
         // Set initial clipped state immediately to prevent flash
         gsap.set('.logo-container', { clipPath: 'inset(0 100% 0 0)' });
         
-        const scrollHintEl = document.querySelector('.scroll-hint');
-        if (scrollHintEl) {
-            gsap.set('.scroll-hint', { clipPath: 'inset(0 100% 0 0)' });
-        }
-        
-        // Logo reveal animation
+        // Then animate to fully revealed
         gsap.to('.logo-container', {
             clipPath: 'inset(0 0% 0 0)',
             duration: TIMING.entryDuration,
@@ -175,20 +153,11 @@
             delay: TIMING.entryDelay
         });
 
-        if (scrollHintEl) {
-            gsap.to('.scroll-hint', {
-                clipPath: 'inset(0 0% 0 0)',
-                duration: TIMING.entryDuration,
-                ease: TIMING.entryEase,
-                delay: TIMING.entryDelay
-            });
-        }
-
         // ========================================
         // TEXT REVEAL ANIMATIONS
-        // Start 0.3s after logo finishes (0.3 + 1.5 + 0.3 = 2.1s)
+        // Start at same time as logo animation
         // ========================================
-        const textStartDelay = TIMING.entryDelay + TIMING.entryDuration + 0.3;
+        const textStartDelay = TIMING.entryDelay;
         
         // Split about copy into words
         const aboutCopy = document.querySelector('.about-copy');
@@ -220,7 +189,7 @@
               })
               .to(link, { 
                   x: 0, 
-                  duration: 0.6, 
+                  duration: 0.8, 
                   ease: 'power4.out' 
               });
         });
@@ -240,7 +209,7 @@
               })
               .to(word, { 
                   x: 0, 
-                  duration: 0.6, 
+                  duration: 0.8, 
                   ease: 'power4.out' 
               });
         });
@@ -260,10 +229,11 @@
               })
               .to(item, { 
                   x: 0, 
-                  duration: 0.6, 
+                  duration: 0.8, 
                   ease: 'power4.out' 
               });
         });
+
 
         const lenis = new Lenis({
             duration: 1.2,
@@ -296,14 +266,6 @@
                     scale: 1, 
                     clipPath: 'inset(0 0 0 0)' 
                 });
-                
-                // Reset scroll hint if it exists
-                const scrollHintResize = document.querySelector('.scroll-hint');
-                if (scrollHintResize) {
-                    gsap.set('.scroll-hint', { 
-                        clipPath: 'inset(0 0 0 0)' 
-                    });
-                }
                 
                 // Recalculate and refresh
                 setupAnimations();
