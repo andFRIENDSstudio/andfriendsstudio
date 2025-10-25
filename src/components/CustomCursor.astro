@@ -2,6 +2,16 @@
 // CustomCursor.astro - Pure vanilla JS, no React needed
 ---
 
+<div class="cursor-trail-container">
+  <div class="cursor-trail" data-color="#F03929"></div>
+  <div class="cursor-trail" data-color="#FFBEEE"></div>
+  <div class="cursor-trail" data-color="#5522A8"></div>
+  <div class="cursor-trail" data-color="#0C4AE5"></div>
+  <div class="cursor-trail" data-color="#02C779"></div>
+  <div class="cursor-trail" data-color="#E3F608"></div>
+  <div class="cursor-trail" data-color="#FF9200"></div>
+</div>
+
 <div class="custom-cursor">
   <div class="cursor-content">
     <div class="cursor-text-wrapper">
@@ -19,11 +29,35 @@
     cursor: none !important;
   }
   
+  .cursor-trail-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9998;
+  }
+  
+  .cursor-trail {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+  
+  .cursor-trail-container.hidden {
+    opacity: 0;
+  }
+  
   .custom-cursor {
     position: fixed;
     pointer-events: none;
     z-index: 9999;
-    mix-blend-mode: difference;
     border: 2px solid #fff;
     border-radius: 9999px;
     display: flex;
@@ -34,7 +68,6 @@
     height: 12px;
     background-color: #fff;
     overflow: hidden;
-    transition: mix-blend-mode 0.3s ease;
   }
   
   .custom-cursor.pill-state {
@@ -81,6 +114,7 @@
   }
 
   @media (max-width: 768px) {
+    .cursor-trail-container,
     .custom-cursor {
       display: none;
     }
@@ -97,9 +131,18 @@
   const content = document.querySelector('.cursor-content');
   const textWrapper = document.querySelector('.cursor-text-wrapper');
   const textElement = document.querySelector('.cursor-text');
+  const trailContainer = document.querySelector('.cursor-trail-container');
+  const trailElements = document.querySelectorAll('.cursor-trail');
+  
   let mouseX = 0;
   let mouseY = 0;
   let cursorState = 'default';
+
+  // Set colors for trail elements
+  trailElements.forEach((trail, index) => {
+    const color = trail.getAttribute('data-color');
+    trail.style.backgroundColor = color;
+  });
 
   // Smooth cursor follow
   const moveCursor = (e) => {
@@ -114,6 +157,17 @@
       duration: 0.3,
       ease: 'power2.out'
     });
+    
+    // Animate trail with increasing delays
+    trailElements.forEach((trail, index) => {
+      gsap.to(trail, {
+        x: mouseX,
+        y: mouseY,
+        duration: 0.5 + (index * 0.08), // Each trail element lags more
+        ease: 'power2.out'
+      });
+    });
+    
     requestAnimationFrame(animateCursor);
   };
 
@@ -137,6 +191,7 @@
   const setCursorState = (state, projectInfo = null) => {
     if (state === 'default') {
       cursor.classList.remove('pill-state');
+      trailContainer.classList.remove('hidden');
       gsap.to(cursor, {
         width: 12,
         height: 12,
@@ -155,6 +210,7 @@
     } 
     else if (state === 'link') {
       cursor.classList.remove('pill-state');
+      trailContainer.classList.remove('hidden');
       gsap.to(cursor, {
         width: 40,
         height: 40,
@@ -167,6 +223,7 @@
     } 
     else if (state === 'pill' && projectInfo) {
       cursor.classList.add('pill-state');
+      trailContainer.classList.add('hidden'); // Hide trail in pill state
       textElement.innerHTML = `<strong>${projectInfo.name}</strong>${projectInfo.attribution}`;
       
       // Check for scroll BEFORE animating opacity
