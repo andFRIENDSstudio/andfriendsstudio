@@ -1,5 +1,5 @@
 ---
-// ScrollAnimations.astro - Desktop scroll animations
+// ScrollAnimations.astro - Desktop scroll animations + Entry text reveals
 ---
 
 <script>
@@ -155,7 +155,10 @@
         // Initial setup
         setupAnimations();
         
-        // ENTRY ANIMATION: Clip-path reveal on page load
+        // ========================================
+        // ENTRY ANIMATIONS
+        // ========================================
+        
         // Set initial clipped state immediately to prevent flash
         gsap.set('.logo-container', { clipPath: 'inset(0 100% 0 0)' });
         
@@ -164,7 +167,7 @@
             gsap.set('.scroll-hint', { clipPath: 'inset(0 100% 0 0)' });
         }
         
-        // Then animate to fully revealed
+        // Logo reveal animation
         gsap.to('.logo-container', {
             clipPath: 'inset(0 0% 0 0)',
             duration: TIMING.entryDuration,
@@ -180,6 +183,87 @@
                 delay: TIMING.entryDelay
             });
         }
+
+        // ========================================
+        // TEXT REVEAL ANIMATIONS
+        // Start 0.3s after logo finishes (0.3 + 1.5 + 0.3 = 2.1s)
+        // ========================================
+        const textStartDelay = TIMING.entryDelay + TIMING.entryDuration + 0.3;
+        
+        // Split about copy into words
+        const aboutCopy = document.querySelector('.about-copy');
+        if (aboutCopy) {
+            const text = aboutCopy.textContent;
+            const words = text.trim().split(/\s+/);
+            aboutCopy.innerHTML = words.map(word => 
+                `<span class="word-reveal">${word}</span>`
+            ).join(' ');
+        }
+        
+        // Initialize all text elements to hidden state
+        gsap.set('.links a', { opacity: 0, x: -40 });
+        gsap.set('.about-copy .word-reveal', { opacity: 0, x: -40 });
+        gsap.set('.footer-bar > div', { opacity: 0, x: 40 });
+        
+        // Animate links (from left)
+        const links = document.querySelectorAll('.links a');
+        links.forEach((link, i) => {
+            const tl = gsap.timeline({ 
+                delay: textStartDelay + (i * 0.05) 
+            });
+            
+            tl.to(link, { 
+                  opacity: 1,
+                  x: -50,
+                  duration: 0.1, 
+                  ease: 'power2.in' 
+              })
+              .to(link, { 
+                  x: 0, 
+                  duration: 0.6, 
+                  ease: 'power4.out' 
+              });
+        });
+        
+        // Animate about copy words (from left, faster stagger)
+        const words = document.querySelectorAll('.about-copy .word-reveal');
+        words.forEach((word, i) => {
+            const tl = gsap.timeline({ 
+                delay: textStartDelay + 0.1 + (i * 0.025) 
+            });
+            
+            tl.to(word, { 
+                  opacity: 1,
+                  x: -50,
+                  duration: 0.1, 
+                  ease: 'power2.in' 
+              })
+              .to(word, { 
+                  x: 0, 
+                  duration: 0.6, 
+                  ease: 'power4.out' 
+              });
+        });
+        
+        // Animate footer items (from right)
+        const footerItems = document.querySelectorAll('.footer-bar > div');
+        footerItems.forEach((item, i) => {
+            const tl = gsap.timeline({ 
+                delay: textStartDelay + 0.2 + (i * 0.075) 
+            });
+            
+            tl.to(item, { 
+                  opacity: 1,
+                  x: 50,
+                  duration: 0.1, 
+                  ease: 'power2.in' 
+              })
+              .to(item, { 
+                  x: 0, 
+                  duration: 0.6, 
+                  ease: 'power4.out' 
+              });
+        });
 
         const lenis = new Lenis({
             duration: 1.2,
