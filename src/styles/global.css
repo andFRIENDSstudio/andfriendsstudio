@@ -41,6 +41,17 @@
     box-sizing: border-box;
 }
 
+ a, a *, 
+  button, button *, 
+  [role="button"], [role="button"] *,
+  input, textarea, select, summary,
+  .grey-box, .grey-box * {
+    cursor: none !important;
+    pointer-events: auto;
+  }
+  
+
+
 /* Hide scrollbar - all browsers */
 html, body {
     -ms-overflow-style: none;
@@ -124,9 +135,9 @@ html.lenis, html.lenis body {
 
 
 .about-copy {
-    max-width: 62vw;
-    font-size: 1rem;
-    line-height: 1.6;
+    max-width: 74vw;
+    font-size: 1.2rem;
+    line-height: 1.2;
 }
 
 .logo-container {
@@ -159,7 +170,7 @@ html.lenis, html.lenis body {
 
 .footer-bar > div:nth-child(2) {
     position: absolute;
-    left: calc(100% - 62vw - 2rem); /* Matches about copy 62vw width */
+    left: calc(100% - 74vw - 2rem); /* Matches about copy 62vw width */
 }
 
 /* View Selected Work */
@@ -178,7 +189,6 @@ html.lenis, html.lenis body {
     white-space: nowrap;
     background: transparent;
     border: none;
-    cursor: pointer;
     display: flex;
     align-items: center;
     padding: 0;

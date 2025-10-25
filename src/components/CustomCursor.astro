@@ -24,9 +24,22 @@
   *, *::before, *::after {
     cursor: none !important;
   }
+  a:hover, button:hover, [role="button"]:hover {
+  cursor: none !important;
+}
   
   html, body {
     cursor: none !important;
+  }
+  
+  /* Aggressive cursor hiding for interactive elements */
+  a, a *, 
+  button, button *, 
+  [role="button"], [role="button"] *,
+  input, textarea, select, summary,
+  .grey-box, .grey-box * {
+    cursor: none !important;
+    pointer-events: auto;
   }
   
   .cursor-trail-container {
@@ -122,12 +135,6 @@
       cursor: auto !important;
     }
   }
-
-  /* Hide the system cursor on all interactive elements */
-a, button, [role="button"], input, textarea, select, summary {
-  cursor: none !important;
-}
-
 </style>
 
 <script>
@@ -143,6 +150,7 @@ a, button, [role="button"], input, textarea, select, summary {
   let mouseX = 0;
   let mouseY = 0;
   let cursorState = 'default';
+  let currentHoveredElement = null;
 
   // Set colors for trail elements
   trailElements.forEach((trail, index) => {
@@ -150,10 +158,34 @@ a, button, [role="button"], input, textarea, select, summary {
     trail.style.backgroundColor = color;
   });
 
-  // Smooth cursor follow
+  // Smooth cursor follow with element detection
   const moveCursor = (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    
+    // Check what element we're actually over
+    const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
+    
+    // Check if we're over a grey-box
+    const greyBox = elementUnderCursor?.closest('.grey-box');
+    
+    // Check if we're over a link
+    const link = elementUnderCursor?.closest('a, button, [role="button"]');
+    
+    // Update state based on what we're hovering
+    if (greyBox && cursorState !== 'pill') {
+      // We're over a grey-box but not in pill state - force it
+      handleImageEnter({ currentTarget: greyBox });
+    } else if (!greyBox && cursorState === 'pill') {
+      // We're NOT over a grey-box but still in pill state - reset
+      setCursorState('default');
+    } else if (link && cursorState !== 'link' && cursorState !== 'pill') {
+      // We're over a link but not in link state
+      setCursorState('link');
+    } else if (!link && !greyBox && cursorState === 'link') {
+      // We're not over a link or grey-box but in link state - reset
+      setCursorState('default');
+    }
   };
 
   const animateCursor = () => {
