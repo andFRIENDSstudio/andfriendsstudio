@@ -19,7 +19,7 @@ body::-webkit-scrollbar {
 
 body {
     font-family: 'FK Grotesk', 'Manrope', sans-serif;
-    background: #000000; 
+    background: #000;
     color: #fff;
     overflow-x: hidden;
     min-height: 1200vh;
@@ -55,7 +55,7 @@ html.lenis, html.lenis body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-between; /* Push top and bottom apart */
 }
 
 .top-bar {
@@ -84,9 +84,11 @@ html.lenis, html.lenis body {
     gap: 0.5rem;
 }
 
+
+
 .about-copy {
-    max-width: 75vw;
-    font-size: 1.2rem;
+    max-width: 58vw;
+    font-size: 1rem;
     line-height: 1.6;
 }
 
@@ -141,7 +143,7 @@ html.lenis, html.lenis body {
     width: max-content;
     padding-right: 5vw;
     will-change: transform;
-    opacity: 0;
+    opacity: 0; /* Hidden initially to prevent flash */
 }
 
 .marquee-track.initialized {
@@ -183,24 +185,25 @@ html.lenis, html.lenis body {
         position: fixed;
         height: 100svh;
         width: 100vw;
-        display: block;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
     }
 
+    /* GROUP 1: Links + About (tight spacing) */
     .top-bar {
         position: relative;
         flex-direction: column;
         justify-content: flex-start;
-        gap: 0.75rem;
-        padding: 1.25rem;
-        display: flex;
+        gap: 1rem;
+        padding: 1.5rem;
+        flex-shrink: 0;
     }
 
     .links {
         display: flex;
         flex-direction: row;
         gap: 1rem;
-        font-size: 0.875rem;
     }
 
     .about-copy {
@@ -210,99 +213,97 @@ html.lenis, html.lenis body {
         line-height: 1.4;
     }
 
+    /* GROUP 2: Marquee (solo, centered with large gaps) */
     .marquee-wrapper {
-        position: absolute;
-        top: 58%;
-        transform: translateY(-50%) scale(0.85, 0.7);
-        transform-origin: center;
+        position: relative;
+        top: auto;
+        transform: none;
         left: 0;
         width: 100vw;
         height: auto;
-        padding: 0.5rem 0;
+        min-height: 0;
+        flex: 1;
+        margin: 3rem 0; /* Large gap above and below */
+        padding: 0;
         display: flex;
         align-items: center;
-        overflow-x: scroll;
-        overflow-y: visible;
-        -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x proximity;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        overflow: hidden;
+        cursor: grab;
     }
 
-    .marquee-wrapper::-webkit-scrollbar {
-        display: none;
+    .marquee-wrapper:active {
+        cursor: grabbing;
     }
 
     .marquee-track {
         display: flex;
-        gap: 0.75rem;
-        height: auto;
+        gap: 1rem;
+        height: 100%;
+        max-height: 40svh;
         width: max-content;
-        padding: 0.5rem 1rem;
+        padding: 0 1.5rem;
         will-change: transform;
-        animation: marquee-mobile 60s linear infinite;
         flex-shrink: 0;
         opacity: 1;
     }
 
-    .marquee-wrapper:active .marquee-track {
-        animation-play-state: paused;
-    }
-
-    @keyframes marquee-mobile {
-        0% {
-            transform: translateX(0);
-        }
-        100% {
-            transform: translateX(-50%);
-        }
-    }
-
     .grey-box {
-        scroll-snap-align: center;
         flex-shrink: 0;
-        border-radius: 1.25rem;
+        border-radius: 8px;
+        height: 100%;
     }
 
-    .grey-box.tall,
-    .grey-box.wide,
-    .grey-box.square {
-        width: 35vw !important;
-        min-width: 35vw !important;
-        height: 35vw !important;
-        max-width: 35vw !important;
-        max-height: 35vw !important;
+    /* Option B widths */
+    .grey-box.size-narrow {
+        width: 50vw;
+        min-width: 50vw;
     }
 
+    .grey-box.size-standard {
+        width: 65vw;
+        min-width: 65vw;
+    }
+
+    .grey-box.size-wide {
+        width: 80vw;
+        min-width: 80vw;
+    }
+
+    .grey-box.size-extra-wide {
+        width: 90vw;
+        min-width: 90vw;
+    }
+
+    /* GROUP 3: Logo + Footer (tight spacing) */
     .logo-container {
-        position: absolute;
-        bottom: 2.5rem;
-        left: 0;
-        width: 100%;
-        padding: 0 1.25rem;
-        transform: none !important;
-        clip-path: none !important;
-        scale: 1 !important;
-    }
-
-    .footer-bar {
-        position: absolute;
+        position: relative;
         bottom: 0;
         left: 0;
         width: 100%;
+        padding: 1.5rem;
+        padding-bottom: 0.75rem; /* Tighter gap to footer */
+        transform: none !important;
+        scale: 1 !important;
+        flex-shrink: 0;
+    }
+
+    .footer-bar {
+        position: relative;
+        width: 100%;
         flex-direction: row;
-        display: flex;
         justify-content: space-between;
         gap: 0;
         align-items: center;
-        padding: 1.25rem;
-        font-size: 0.7rem;
+        padding: 0.75rem 1.5rem 1.5rem 1.5rem; /* Tighter gap from logo */
+        font-size: 0.75rem;
+        flex-shrink: 0;
     }
 
+    /* Tablet adjustments */
     @media (min-width: 480px) and (max-width: 1024px) {
         .about-copy {
-            font-size: 0.875rem;
-            line-height: 1.5;
+            font-size: 1.2rem;
+            line-height: 1.2;
         }
 
         .top-bar {
@@ -315,20 +316,20 @@ html.lenis, html.lenis body {
         }
 
         .marquee-wrapper {
-            padding: 3rem 0;
+            margin: 4rem 0;
         }
 
         .marquee-track {
-            max-height: 45svh;
+            max-height: 50svh;
         }
 
         .logo-container {
             padding: 2rem;
-            padding-top: 0;
+            padding-bottom: .15rem;
         }
 
         .footer-bar {
-            padding: 2rem;
+            padding: 1rem 2rem 2rem 2rem;
             font-size: 0.875rem;
         }
     }
