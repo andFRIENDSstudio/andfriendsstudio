@@ -1,0 +1,266 @@
+---
+// FallingLogos.astro - Optimized solitaire-style win animation
+---
+
+<canvas id="falling-logos-canvas"></canvas>
+
+<style>
+  #falling-logos-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  #falling-logos-canvas.active {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+
+  const canvas = document.getElementById('falling-logos-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d', { alpha: true })!;
+  
+  // Resize canvas
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // Brand color progression in ROYGBV (rainbow) order
+  const COLOR_PROGRESSION = [
+    '#F03929',  // Red
+    '#FF9200',  // Orange
+    '#E3F608',  // Yellow
+    '#02C779',  // Green
+    '#0C4AE5',  // Blue
+    '#5522A8',  // Violet/Purple
+  ];
+
+  // Optimized trail parameters
+  const TRAIL_LENGTH = 20;
+  const FADE_SPEED = 0.05;
+
+  // Logo SVG paths (from Logo.astro)
+  const LOGO_PATHS = [
+    { d: "M0 724.04C1.21183 685.868 0 606.308 0 606.308H550.988V724.04C550.988 724.04 183.224 723.329 0 724.04Z" },
+    { d: "M359.018 385.308C333.859 385.308 280.486 385.308 280.486 385.308V302.455H516.055V385.308H456.728C454.226 526.512 285.808 598.485 168.102 539.368C39.6478 481.543 27.187 300.348 155.905 234.856C73.8688 174.87 102.321 46.179 194.393 13.3015C286.73 -28.6647 417.502 32.6118 414.209 141.756C382.543 142.045 316.736 141.966 316.736 141.966C316.736 141.966 316.841 140.676 316.736 139.148C315.84 117.229 299.928 98.0771 278.984 92.1233C196.29 68.4399 173.028 190.255 260.333 195.076V280.3C158.934 279.378 123.317 417.711 216.839 461.442C274.638 489.499 356.015 453.302 359.044 385.281L359.018 385.308Z" }
+  ];
+  
+  const LOGO_ORIGINAL_WIDTH = 550.988;
+  const LOGO_ORIGINAL_HEIGHT = 724.04;
+  const LOGO_SCALE = 0.35;
+
+  // Physics constants
+  const GRAVITY = 0.5;
+  const BOUNCE_DAMPING = 0.7;
+  const FLOOR_Y_OFFSET = 0;
+
+  let logos: FallingLogo[] = [];
+  let lastTime = 0;
+  const targetFPS = 60;
+  const frameTime = 1000 / targetFPS;
+
+  // Pre-create Path2D objects for performance
+  const logoPaths2D = LOGO_PATHS.map(pathData => new Path2D(pathData.d));
+
+  class FallingLogo {
+    x: number;
+    y: number;
+    vy: number;
+    vx: number;
+    width: number;
+    height: number;
+    bounces: number;
+    maxBounces: number;
+    trail: Array<{ x: number; y: number; alpha: number }>;
+    dead: boolean;
+
+    constructor(x: number, startY = -150) {
+      this.x = x;
+      this.y = startY;
+      this.vy = 0;
+      this.vx = (Math.random() - 0.5) * 8;
+      this.width = LOGO_ORIGINAL_WIDTH * LOGO_SCALE;
+      this.height = LOGO_ORIGINAL_HEIGHT * LOGO_SCALE;
+      this.bounces = 0;
+      this.maxBounces = 4;
+      this.trail = [];
+      this.dead = false;
+    }
+
+    update() {
+      // Apply gravity
+      this.vy += GRAVITY;
+      
+      // Update position
+      this.y += this.vy;
+      this.x += this.vx;
+
+      // Add trail copy
+      if (this.bounces <= this.maxBounces || this.y < canvas.height + 100) {
+        this.trail.push({ x: this.x, y: this.y, alpha: 1 });
+
+        if (this.trail.length > TRAIL_LENGTH) {
+          this.trail.shift();
+        }
+      }
+
+      // Fade trail
+      for (let i = 0; i < this.trail.length; i++) {
+        this.trail[i].alpha -= FADE_SPEED;
+      }
+
+      // Remove fully faded copies
+      this.trail = this.trail.filter(copy => copy.alpha > 0);
+
+      // Floor collision
+      const floorY = canvas.height - this.height - FLOOR_Y_OFFSET;
+      if (this.y >= floorY && this.vy > 0 && this.bounces < this.maxBounces) {
+        this.y = floorY;
+        this.vy = -this.vy * BOUNCE_DAMPING;
+        this.bounces++;
+      }
+
+      // Accelerate downward after max bounces
+      if (this.bounces >= this.maxBounces) {
+        this.vy = Math.max(this.vy, 5);
+      }
+
+      // Mark as dead once off screen
+      if (this.y > canvas.height + 50) {
+        this.dead = true;
+      }
+
+      // Wall bounce
+      if (this.x <= 0 || this.x + this.width >= canvas.width) {
+        this.vx = -this.vx;
+        this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
+      }
+    }
+
+    draw() {
+      // Draw trail
+      for (let i = 0; i < this.trail.length; i++) {
+        const copy = this.trail[i];
+        const position = i / Math.max(1, this.trail.length - 1);
+        const color = getColorForPosition(position);
+        drawLogo(copy.x, copy.y, copy.alpha, color);
+      }
+
+      // Draw main logo
+      drawLogo(this.x, this.y, 1, '#000');
+    }
+  }
+
+  // Optimized color interpolation
+  function interpolateColor(color1: string, color2: string, factor: number): string {
+    const r1 = parseInt(color1.slice(1, 3), 16);
+    const g1 = parseInt(color1.slice(3, 5), 16);
+    const b1 = parseInt(color1.slice(5, 7), 16);
+    
+    const r2 = parseInt(color2.slice(1, 3), 16);
+    const g2 = parseInt(color2.slice(3, 5), 16);
+    const b2 = parseInt(color2.slice(5, 7), 16);
+    
+    const r = Math.round(r1 + (r2 - r1) * factor);
+    const g = Math.round(g1 + (g2 - g1) * factor);
+    const b = Math.round(b1 + (b2 - b1) * factor);
+    
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function getColorForPosition(position: number): string {
+    const totalColors = COLOR_PROGRESSION.length;
+    const scaledPos = position * (totalColors - 1);
+    
+    const colorIndex = Math.floor(scaledPos);
+    const nextColorIndex = Math.min(colorIndex + 1, totalColors - 1);
+    const factor = scaledPos - colorIndex;
+    
+    return interpolateColor(
+      COLOR_PROGRESSION[colorIndex],
+      COLOR_PROGRESSION[nextColorIndex],
+      factor
+    );
+  }
+
+  function drawLogo(x: number, y: number, alpha = 1, color = '#000') {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.scale(LOGO_SCALE, LOGO_SCALE);
+    
+    ctx.fillStyle = color;
+    for (let i = 0; i < logoPaths2D.length; i++) {
+      ctx.fill(logoPaths2D[i]);
+    }
+    
+    ctx.restore();
+  }
+
+  let animationId: number;
+
+  function animate(currentTime: number) {
+    if (!lastTime) lastTime = currentTime;
+    const deltaTime = currentTime - lastTime;
+    
+    if (deltaTime >= frameTime) {
+      // Clear with transparent fade for trail effect
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Update and draw
+      for (let i = logos.length - 1; i >= 0; i--) {
+        logos[i].update();
+        logos[i].draw();
+        
+        if (logos[i].dead) {
+          logos.splice(i, 1);
+        }
+      }
+      
+      lastTime = currentTime - (deltaTime % frameTime);
+    }
+
+    animationId = requestAnimationFrame(animate);
+  }
+
+  const MAX_LOGOS = 5;
+  let spawnInterval: number;
+  
+  function spawnLogo() {
+    if (logos.length >= MAX_LOGOS) return;
+    
+    const logoWidth = LOGO_ORIGINAL_WIDTH * LOGO_SCALE;
+    const x = Math.random() * (canvas.width - logoWidth);
+    logos.push(new FallingLogo(x));
+  }
+
+  // Public API for starting/stopping
+  (window as any).startFallingLogos = () => {
+    canvas.classList.add('active');
+    logos = [];
+    spawnInterval = setInterval(spawnLogo, 1200) as unknown as number;
+    spawnLogo();
+    animate(0);
+  };
+
+  (window as any).stopFallingLogos = () => {
+    canvas.classList.remove('active');
+    if (spawnInterval) clearInterval(spawnInterval);
+    if (animationId) cancelAnimationFrame(animationId);
+    logos = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+</script>

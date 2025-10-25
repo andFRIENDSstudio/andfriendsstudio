@@ -1,0 +1,68 @@
+---
+// IdleAnimationManager.astro - Manages idle animations based on inactivity
+---
+
+<script>
+  const IDLE_TIMEOUT = 30000; // 30 seconds of inactivity
+  const ANIMATION_DURATION = 15000; // Run animation for 15 seconds
+  
+  let idleTimer: number | null = null;
+  let animationTimer: number | null = null;
+  let currentAnimation: 'falling' | 'dvd' | null = null;
+
+  function resetIdleTimer() {
+    // Clear existing timers
+    if (idleTimer) clearTimeout(idleTimer);
+    if (animationTimer) clearTimeout(animationTimer);
+    
+    // Stop any running animation
+    stopCurrentAnimation();
+    
+    // Start new idle timer
+    idleTimer = setTimeout(startRandomAnimation, IDLE_TIMEOUT) as unknown as number;
+  }
+
+  function startRandomAnimation() {
+    // Choose random animation (50/50 split)
+    const animations: Array<'falling' | 'dvd'> = ['falling', 'dvd'];
+    currentAnimation = animations[Math.floor(Math.random() * animations.length)];
+    
+    if (currentAnimation === 'falling') {
+      (window as any).startFallingLogos?.();
+    } else {
+      (window as any).startDVDLogo?.();
+    }
+    
+    // Stop animation after duration
+    animationTimer = setTimeout(() => {
+      stopCurrentAnimation();
+      resetIdleTimer(); // Restart idle detection
+    }, ANIMATION_DURATION) as unknown as number;
+  }
+
+  function stopCurrentAnimation() {
+    if (currentAnimation === 'falling') {
+      (window as any).stopFallingLogos?.();
+    } else if (currentAnimation === 'dvd') {
+      (window as any).stopDVDLogo?.();
+    }
+    currentAnimation = null;
+  }
+
+  // Track user activity
+  const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+  
+  activityEvents.forEach(event => {
+    document.addEventListener(event, resetIdleTimer, { passive: true });
+  });
+
+  // Start idle detection
+  resetIdleTimer();
+
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    stopCurrentAnimation();
+    if (idleTimer) clearTimeout(idleTimer);
+    if (animationTimer) clearTimeout(animationTimer);
+  });
+</script>

@@ -4,13 +4,15 @@ import Marquee from '../components/Marquee.astro';
 import CustomCursor from '../components/CustomCursor.astro';
 import ScrollAnimations from '../components/ScrollAnimations.astro';
 import ScrollHint from '../components/ScrollHint.astro';
-import FilmGrain from '../components/FilmGrain.astro';
+import FallingLogos from '../components/FallingLogos.astro';
+import DVDLogo from '../components/DVDLogo.astro';
+import IdleAnimationManager from '../components/IdleAnimationManager.astro';
 import '../styles/global.css';
 
 const siteSettings = {
   email: "andfriendsstudio23@gmail.com",
   instagram: "and.friends.studio",
-  aboutCopy: "&FRIENDS Studio is the collective creative practice of designers, developers, founders, and friends connecting on the projects that come their way or come to mind. Their respective backgrounds span the areas of graphic and motion design, fine art, immersive installations, and live events. From these diverse and interdisciplinary talents, their approach to art is medium-agnostic, centering instead on expressing and evoking reflection, community, and wonder. As individuals, their work has contributed to some of the most widely recognized shows in entertainment in association with many top-tier studios."
+  aboutCopy: "&FRIENDS Studio is the collective creative practice where designers, developers, and artists work and play together on projects that come their way or come to mind. Their backgrounds span graphic and motion design, fine art, immersive installations, and live events. Drawing from these diverse and interdisciplinary talents, their approach to art is medium-agnostic—centering instead on expressing and evoking reflection, community, and wonder."
 };
 ---
 
@@ -22,20 +24,18 @@ const siteSettings = {
     <title>&FRIENDS Studio</title>
 </head>
 <body>
- <FilmGrain /> 
-
     <div class="hero-state">
         <div class="top-bar">
             <div class="links">
                 <a href={`mailto:${siteSettings.email}`}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" >
                         <path d="M7 17L17 7"></path>
                         <path d="M7 7h10v10"></path>
                     </svg>
                     Email
                 </a>
                 <a href={`https://instagram.com/${siteSettings.instagram}`} target="_blank">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                         <path d="M7 17L17 7"></path>
                         <path d="M7 7h10v10"></path>
                     </svg>
@@ -60,6 +60,8 @@ const siteSettings = {
     <ScrollHint />
     <CustomCursor />
     <ScrollAnimations />
-    
+    <FallingLogos />
+    <DVDLogo />
+    <IdleAnimationManager />
 </body>
 </html>

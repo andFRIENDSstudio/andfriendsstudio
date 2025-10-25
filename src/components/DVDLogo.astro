@@ -1,0 +1,149 @@
+---
+// DVDLogo.astro - Simplified DVD-style bouncing logo with color changes
+---
+
+<canvas id="dvd-logo-canvas"></canvas>
+
+<style>
+  #dvd-logo-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  #dvd-logo-canvas.active {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  const canvas = document.getElementById('dvd-logo-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d', { alpha: true })!;
+  
+  // Resize canvas
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // Brand color progression
+  const COLORS = [
+    '#EF3929',  // Red
+    '#D8A2CB',  // Pink
+    '#FE9200',  // Orange
+    '#5521A7',  // Purple
+    '#E3F607',  // Yellow-Green
+    '#0B4BE5',  // Blue
+    '#02C779',  // Green/Cyan
+  ];
+
+  // Logo SVG paths
+  const LOGO_PATHS = [
+    { d: "M0 724.04C1.21183 685.868 0 606.308 0 606.308H550.988V724.04C550.988 724.04 183.224 723.329 0 724.04Z" },
+    { d: "M359.018 385.308C333.859 385.308 280.486 385.308 280.486 385.308V302.455H516.055V385.308H456.728C454.226 526.512 285.808 598.485 168.102 539.368C39.6478 481.543 27.187 300.348 155.905 234.856C73.8688 174.87 102.321 46.179 194.393 13.3015C286.73 -28.6647 417.502 32.6118 414.209 141.756C382.543 142.045 316.736 141.966 316.736 141.966C316.736 141.966 316.841 140.676 316.736 139.148C315.84 117.229 299.928 98.0771 278.984 92.1233C196.29 68.4399 173.028 190.255 260.333 195.076V280.3C158.934 279.378 123.317 417.711 216.839 461.442C274.638 489.499 356.015 453.302 359.044 385.281L359.018 385.308Z" }
+  ];
+  
+  const LOGO_ORIGINAL_WIDTH = 550.988;
+  const LOGO_ORIGINAL_HEIGHT = 724.04;
+  const LOGO_SCALE = 0.25; // Smaller for DVD mode
+
+  // Pre-create Path2D objects
+  const logoPaths2D = LOGO_PATHS.map(pathData => new Path2D(pathData.d));
+
+  class DVDLogo {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    width: number;
+    height: number;
+    colorIndex: number;
+
+    constructor() {
+      this.width = LOGO_ORIGINAL_WIDTH * LOGO_SCALE;
+      this.height = LOGO_ORIGINAL_HEIGHT * LOGO_SCALE;
+      this.x = Math.random() * (canvas.width - this.width);
+      this.y = Math.random() * (canvas.height - this.height);
+      this.vx = 2;
+      this.vy = 2;
+      this.colorIndex = Math.floor(Math.random() * COLORS.length);
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+
+      // Check for corner hits (change color)
+      let hitCorner = false;
+      
+      // Left or right wall
+      if (this.x <= 0 || this.x + this.width >= canvas.width) {
+        this.vx = -this.vx;
+        this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
+        hitCorner = true;
+      }
+      
+      // Top or bottom wall
+      if (this.y <= 0 || this.y + this.height >= canvas.height) {
+        this.vy = -this.vy;
+        this.y = Math.max(0, Math.min(this.y, canvas.height - this.height));
+        hitCorner = true;
+      }
+
+      // Change color on any wall hit
+      if (hitCorner) {
+        this.colorIndex = (this.colorIndex + 1) % COLORS.length;
+      }
+    }
+
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.scale(LOGO_SCALE, LOGO_SCALE);
+      
+      ctx.fillStyle = COLORS[this.colorIndex];
+      for (let i = 0; i < logoPaths2D.length; i++) {
+        ctx.fill(logoPaths2D[i]);
+      }
+      
+      ctx.restore();
+    }
+  }
+
+  let logo: DVDLogo | null = null;
+  let animationId: number;
+
+  function animate() {
+    // Clear canvas with transparency
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (logo) {
+      logo.update();
+      logo.draw();
+    }
+
+    animationId = requestAnimationFrame(animate);
+  }
+
+  // Public API
+  (window as any).startDVDLogo = () => {
+    canvas.classList.add('active');
+    logo = new DVDLogo();
+    animate();
+  };
+
+  (window as any).stopDVDLogo = () => {
+    canvas.classList.remove('active');
+    if (animationId) cancelAnimationFrame(animationId);
+    logo = null;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+</script>
