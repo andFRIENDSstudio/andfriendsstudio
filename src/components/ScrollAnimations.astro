@@ -1,14 +1,13 @@
 ---
-// ScrollAnimations.astro - Desktop scroll animations + Mobile GSAP Observer
+// ScrollAnimations.astro - Desktop scroll animations
 ---
 
 <script>
     import gsap from 'gsap';
     import { ScrollTrigger } from 'gsap/ScrollTrigger';
-    import { Observer } from 'gsap/Observer';
     import Lenis from 'lenis';
     
-    gsap.registerPlugin(ScrollTrigger, Observer);
+    gsap.registerPlugin(ScrollTrigger);
 
     const isDesktop = window.innerWidth > 768;
 
@@ -31,55 +30,33 @@
     // Fire on load
     window.addEventListener('load', resetScroll);
 
-    // ========================================
-    // LOGO CLIPPATH INTRO
-    // ========================================
-    const INTRO_TIMING = {
-        duration: 1.5,
-        delay: 0.3,
-        ease: 'power2.out',
-    };
-
-    // Set initial clipped state immediately to prevent flash
-    gsap.set('.logo-container', { clipPath: 'inset(0 100% 0 0)' });
-    
-    const scrollHintEl = document.querySelector('.scroll-hint');
-    if (scrollHintEl && isDesktop) {
-        gsap.set('.scroll-hint', { clipPath: 'inset(0 100% 0 0)' });
-    }
-    
-    // Then animate to fully revealed
-    gsap.to('.logo-container', {
-        clipPath: 'inset(0 0% 0 0)',
-        duration: INTRO_TIMING.duration,
-        ease: INTRO_TIMING.ease,
-        delay: INTRO_TIMING.delay
-    });
-
-    if (scrollHintEl && isDesktop) {
-        gsap.to('.scroll-hint', {
-            clipPath: 'inset(0 0% 0 0)',
-            duration: INTRO_TIMING.duration,
-            ease: INTRO_TIMING.ease,
-            delay: INTRO_TIMING.delay
-        });
-    }
-
-    // ========================================
-    // DESKTOP ANIMATIONS
-    // ========================================
     if (isDesktop) {
+        // Calculate marquee dimensions first
         const track = document.querySelector('.marquee-track');
         
+        // ========================================
+        // TIMING CONFIGURATION - Adjust these to tune animations
+        // ========================================
         const TIMING = {
+            // Scroll scrub values (higher = smoother/floatier, lower = snappier)
             logoScrub: 3,
             marqueeScrub: 3,
+            
+            // Logo clip path animation
             clipDuration: 1.2,
-            clipTriggerPoint: 0.25,
+            clipTriggerPoint: 0.25, // 0-1, when during logo shrink it triggers (0.25 = 25% through)
             clipEase: 'power2.inOut',
+            
+            // Entry animation on page load
+            entryDuration: 1.5,
+            entryDelay: 0.3,
+            entryEase: 'power2.out',
         };
+        // ========================================
         
+        // Function to recalculate on resize
         function setupAnimations() {
+            // Kill existing ScrollTriggers to refresh
             ScrollTrigger.getAll().forEach(st => st.kill());
             
             const trackWidth = track.scrollWidth;
@@ -87,16 +64,21 @@
             const paddingRight = viewportWidth * 0.05;
             const totalDistance = trackWidth - viewportWidth + paddingRight;
 
+            // RESPONSIVE: Scale page height based on viewport width
             const basePageHeight = 600;
             const viewportScale = viewportWidth / 1920;
             const pageHeight = basePageHeight * Math.max(0.7, viewportScale);
             
             document.body.style.minHeight = `${pageHeight}vh`;
 
+            // ADAPTIVE TIMING: Wider screens = more overlap, narrower = less overlap
             const widthRatio = Math.min(Math.max(viewportWidth / 1920, 0.5), 1);
             
             const logoShrinkEnd = pageHeight * gsap.utils.interpolate(0.75, 0.65, widthRatio);
+            // Marquee starts at same time as logo shrink
+            const marqueeStart = 0;
 
+            // Logo scale - scrubs with scroll
             const logoTimeline = gsap.timeline({
                 scrollTrigger: {
                     trigger: 'body',
@@ -107,6 +89,7 @@
                 }
             });
 
+            // ADAPTIVE SCALE: Smaller viewports = less shrinking
             const targetScale = gsap.utils.interpolate(0.8, 0.45, widthRatio);
 
             logoTimeline.to('.logo-container', {
@@ -114,8 +97,55 @@
                 ease: 'none',
             });
 
-            // Scroll-triggered clippath removed - logo only animates on intro
+            // Logo clip path - triggers at a point, then animates independently
+            gsap.to('.logo-container', {
+                clipPath: 'inset(0 85% 0 0)',
+                duration: TIMING.clipDuration,
+                ease: TIMING.clipEase,
+                scrollTrigger: {
+                    trigger: 'body',
+                    start: `${logoShrinkEnd * TIMING.clipTriggerPoint}vh top`,
+                    end: `${logoShrinkEnd * TIMING.clipTriggerPoint + 10}vh top`,
+                    toggleActions: 'play none reverse none',
+                    invalidateOnRefresh: true,
+                }
+            });
 
+            // SCROLL HINT clip path - same timing as logo (only if element exists)
+            const scrollHint = document.querySelector('.scroll-hint');
+            if (scrollHint) {
+                gsap.to('.scroll-hint', {
+                    clipPath: 'inset(0 100% 0 0)',
+                    duration: TIMING.clipDuration,
+                    ease: TIMING.clipEase,
+                    scrollTrigger: {
+                        trigger: 'body',
+                        start: `${logoShrinkEnd * TIMING.clipTriggerPoint}vh top`,
+                        end: `${logoShrinkEnd * TIMING.clipTriggerPoint + 10}vh top`,
+                        toggleActions: 'play none reverse none',
+                        invalidateOnRefresh: true,
+                    }
+                });
+            }
+
+            // VIEW SELECTED WORK clip path - LEFT TO RIGHT (opposite of logo)
+            const viewSelectedWork = document.querySelector('.view-selected-work');
+            if (viewSelectedWork) {
+                gsap.to('.view-selected-work', {
+                    clipPath: 'inset(0 0 0 100%)', // Left to right wipe
+                    duration: TIMING.clipDuration,
+                    ease: TIMING.clipEase,
+                    scrollTrigger: {
+                        trigger: 'body',
+                        start: `${logoShrinkEnd * TIMING.clipTriggerPoint}vh top`,
+                        end: `${logoShrinkEnd * TIMING.clipTriggerPoint + 10}vh top`,
+                        toggleActions: 'play none reverse none',
+                        invalidateOnRefresh: true,
+                    }
+                });
+            }
+
+            // Marquee: slides in at same time as logo shrinks, completes at page end
             gsap.fromTo('.marquee-track',
                 { 
                     x: viewportWidth
@@ -133,12 +163,54 @@
                 }
             );
             
+            // Make marquee visible after positioning
             track.classList.add('initialized');
             
             ScrollTrigger.refresh();
         }
         
+        // Initial setup
         setupAnimations();
+        
+        // ENTRY ANIMATION: Clip-path reveal on page load
+        // Set initial clipped state immediately to prevent flash
+        gsap.set('.logo-container', { clipPath: 'inset(0 100% 0 0)' });
+        
+        const scrollHintEl = document.querySelector('.scroll-hint');
+        if (scrollHintEl) {
+            gsap.set('.scroll-hint', { clipPath: 'inset(0 100% 0 0)' });
+        }
+
+        const viewSelectedWorkEl = document.querySelector('.view-selected-work');
+        if (viewSelectedWorkEl) {
+            gsap.set('.view-selected-work', { clipPath: 'inset(0 100% 0 0)' }); // Start clipped left to right
+        }
+        
+        // Then animate to fully revealed
+        gsap.to('.logo-container', {
+            clipPath: 'inset(0 0% 0 0)',
+            duration: TIMING.entryDuration,
+            ease: TIMING.entryEase,
+            delay: TIMING.entryDelay
+        });
+
+        if (scrollHintEl) {
+            gsap.to('.scroll-hint', {
+                clipPath: 'inset(0 0% 0 0)',
+                duration: TIMING.entryDuration,
+                ease: TIMING.entryEase,
+                delay: TIMING.entryDelay
+            });
+        }
+
+        if (viewSelectedWorkEl) {
+            gsap.to('.view-selected-work', {
+                clipPath: 'inset(0 0% 0 0)',
+                duration: TIMING.entryDuration,
+                ease: TIMING.entryEase,
+                delay: TIMING.entryDelay
+            });
+        }
 
         const lenis = new Lenis({
             duration: 1.2,
@@ -158,72 +230,79 @@
         }
         requestAnimationFrame(raf);
 
+        // Debounced resize handler
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => {
+                // Kill all scroll triggers
                 ScrollTrigger.getAll().forEach(st => st.kill());
                 
+                // Reset logo to default state before recalculating
                 gsap.set('.logo-container', { 
                     scale: 1, 
                     clipPath: 'inset(0 0 0 0)' 
                 });
                 
-                if (scrollHintEl) {
+                // Reset scroll hint if it exists
+                const scrollHintResize = document.querySelector('.scroll-hint');
+                if (scrollHintResize) {
                     gsap.set('.scroll-hint', { 
                         clipPath: 'inset(0 0 0 0)' 
                     });
                 }
+
+                // Reset view selected work if it exists
+                const viewSelectedWorkResize = document.querySelector('.view-selected-work');
+                if (viewSelectedWorkResize) {
+                    gsap.set('.view-selected-work', { 
+                        clipPath: 'inset(0 0 0 0)' 
+                    });
+                }
                 
+                // Recalculate and refresh
                 setupAnimations();
                 
+                // Force ScrollTrigger to update based on current scroll position
                 ScrollTrigger.refresh(true);
             }, 250);
         });
-    } 
-    
-    // ========================================
-    // MOBILE ANIMATIONS
-    // ========================================
-    else {
-        const container = document.querySelector('.marquee-wrapper');
+    } else {
+        // Mobile: duplicate marquee track for infinite loop
         const track = document.querySelector('.marquee-track');
-        
-        if (container && track) {
-            const half = track.clientWidth / 2;
-            const wrap = gsap.utils.wrap(-half, 0);
-            
-            // Base auto-scroll speed (15-20s per full loop = medium browsable)
-            const autoScrollSpeed = 0.5; // pixels per frame at 60fps (~17s for typical content)
-            
-            let total = 0;
-            let autoScrollOffset = 0;
-            
-            // Auto-scroll animation loop
-            function autoScroll() {
-                autoScrollOffset -= autoScrollSpeed;
-                total = autoScrollOffset;
-                gsap.set(track, { x: wrap(total) });
-                requestAnimationFrame(autoScroll);
-            }
-            
-            // Start auto-scroll
-            autoScroll();
-            
-            // Use GSAP Observer for drag control
-            Observer.create({
-                target: container,
-                type: "touch,pointer",
-                onDrag: (self) => {
-                    // Add drag delta to current position (additive control)
-                    total += self.deltaX;
-                    autoScrollOffset = total; // Update auto-scroll to continue from here
-                    gsap.set(track, { x: wrap(total) });
-                },
-            });
-            
-            // Make track visible
-            track.style.opacity = '1';
+        if (track && !track.dataset.duplicated) {
+            const clone = track.innerHTML;
+            track.innerHTML = track.innerHTML + clone;
+            track.dataset.duplicated = 'true';
         }
     }
+
+    // Handle resize between mobile and desktop
+    let lastIsDesktop = isDesktop;
+    window.addEventListener('resize', () => {
+        const nowIsDesktop = window.innerWidth > 768;
+        
+        // If switching from mobile to desktop, remove duplicates
+        if (!lastIsDesktop && nowIsDesktop) {
+            const track = document.querySelector('.marquee-track');
+            if (track && track.dataset.duplicated) {
+                const children = Array.from(track.children);
+                const halfLength = Math.floor(children.length / 2);
+                children.slice(halfLength).forEach(child => child.remove());
+                delete track.dataset.duplicated;
+            }
+        }
+        
+        // If switching from desktop to mobile, add duplicates
+        if (lastIsDesktop && !nowIsDesktop) {
+            const track = document.querySelector('.marquee-track');
+            if (track && !track.dataset.duplicated) {
+                const clone = track.innerHTML;
+                track.innerHTML = track.innerHTML + clone;
+                track.dataset.duplicated = 'true';
+            }
+        }
+        
+        lastIsDesktop = nowIsDesktop;
+    });
 </script>

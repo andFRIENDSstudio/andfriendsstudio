@@ -3,9 +3,7 @@ import Logo from '../components/Logo.astro';
 import Marquee from '../components/Marquee.astro';
 import CustomCursor from '../components/CustomCursor.astro';
 import ScrollAnimations from '../components/ScrollAnimations.astro';
-import FallingLogos from '../components/FallingLogos.astro';
-import DVDLogo from '../components/DVDLogo.astro';
-import IdleAnimationManager from '../components/IdleAnimationManager.astro';
+import ScrollHint from '../components/ScrollHint.astro';
 import '../styles/global.css';
 
 const siteSettings = {
@@ -27,14 +25,14 @@ const siteSettings = {
         <div class="top-bar">
             <div class="links">
                 <a href={`mailto:${siteSettings.email}`}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M7 17L17 7"></path>
                         <path d="M7 7h10v10"></path>
                     </svg>
                     Email
                 </a>
                 <a href={`https://instagram.com/${siteSettings.instagram}`} target="_blank">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M7 17L17 7"></path>
                         <path d="M7 7h10v10"></path>
                     </svg>
@@ -48,6 +46,18 @@ const siteSettings = {
 
         <Marquee />
 
+        <button class="view-selected-work" id="viewSelectedWork">
+            <span class="bracket-left">[&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <span class="content-group">
+                <span>VIEW SELECTED WORK</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                </svg>
+            </span>
+            <span class="bracket-right">&nbsp;&nbsp;&nbsp;]</span>
+        </button>
+
         <Logo />
 
         <div class="footer-bar">
@@ -56,10 +66,26 @@ const siteSettings = {
             <div>All Rights Reserved</div>
         </div>
     </div>
+    <ScrollHint />
     <CustomCursor />
     <ScrollAnimations />
-    <FallingLogos />
-    <DVDLogo />
-    <IdleAnimationManager />
+    
+    <script>
+        // Scroll to marquee on button click
+        const viewButton = document.getElementById('viewSelectedWork');
+        if (viewButton) {
+            viewButton.addEventListener('click', () => {
+                // Calculate where marquee starts entering view
+                // This should match the scroll start point in ScrollAnimations
+                const viewportHeight = window.innerHeight;
+                const scrollTarget = viewportHeight * 0.25; // Adjust this to match your animation start
+                
+                window.scrollTo({
+                    top: scrollTarget,
+                    behavior: 'smooth'
+                });
+            });
+        }
+    </script>
 </body>
 </html>

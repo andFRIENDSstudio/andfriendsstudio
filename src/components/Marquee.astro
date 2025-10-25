@@ -197,22 +197,6 @@ const organizedProjects = organizeProjects(projects);
                 </div>
             );
         })}
-        
-        <!-- Duplicate for infinite scroll (hidden from screen readers) -->
-        {organizedProjects.map((project) => {
-            const size = project.size || getCardSize(project);
-            return (
-                <div 
-                    class={`grey-box size-${size}`}
-                    data-project={project.title}
-                    data-contributors={project.contributors?.join(', ')}
-                    data-year={getYear(project.date)}
-                    style={`background-image: url(${project.image}); background-size: cover; background-position: center;`}
-                    aria-hidden="true"
-                >
-                </div>
-            );
-        })}
     </div>
 </div>
 
