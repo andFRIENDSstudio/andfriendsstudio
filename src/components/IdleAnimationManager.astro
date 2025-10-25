@@ -1,22 +1,23 @@
 ---
 // IdleAnimationManager.astro - Manages idle animations based on inactivity
+// TODO: Update IDLE_TIMEOUT to 30000 for project pages (currently 15000 for home)
 ---
 
 <script>
-  const IDLE_TIMEOUT = 30000; // 30 seconds of inactivity
-  const ANIMATION_DURATION = 15000; // Run animation for 15 seconds
+  const IDLE_TIMEOUT = 15000; // 15 seconds of inactivity on home page
   
   let idleTimer: number | null = null;
-  let animationTimer: number | null = null;
   let currentAnimation: 'falling' | 'dvd' | null = null;
+  let isAnimating = false;
 
   function resetIdleTimer() {
-    // Clear existing timers
+    // Clear existing timer
     if (idleTimer) clearTimeout(idleTimer);
-    if (animationTimer) clearTimeout(animationTimer);
     
-    // Stop any running animation
-    stopCurrentAnimation();
+    // Stop any running animation if user is active
+    if (isAnimating) {
+      stopCurrentAnimation();
+    }
     
     // Start new idle timer
     idleTimer = setTimeout(startRandomAnimation, IDLE_TIMEOUT) as unknown as number;
@@ -26,6 +27,7 @@
     // Choose random animation (50/50 split)
     const animations: Array<'falling' | 'dvd'> = ['falling', 'dvd'];
     currentAnimation = animations[Math.floor(Math.random() * animations.length)];
+    isAnimating = true;
     
     if (currentAnimation === 'falling') {
       (window as any).startFallingLogos?.();
@@ -33,11 +35,7 @@
       (window as any).startDVDLogo?.();
     }
     
-    // Stop animation after duration
-    animationTimer = setTimeout(() => {
-      stopCurrentAnimation();
-      resetIdleTimer(); // Restart idle detection
-    }, ANIMATION_DURATION) as unknown as number;
+    // Animation will loop continuously until user activity
   }
 
   function stopCurrentAnimation() {
@@ -47,6 +45,7 @@
       (window as any).stopDVDLogo?.();
     }
     currentAnimation = null;
+    isAnimating = false;
   }
 
   // Track user activity
@@ -63,6 +62,5 @@
   window.addEventListener('beforeunload', () => {
     stopCurrentAnimation();
     if (idleTimer) clearTimeout(idleTimer);
-    if (animationTimer) clearTimeout(animationTimer);
   });
 </script>
