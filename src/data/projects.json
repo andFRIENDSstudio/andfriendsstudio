@@ -1,7 +1,7 @@
 {
   "projects": [
     {
-      "title": "BLINK24 | Futerra I Was The Earth",
+      "title": "BLINK | Futerra I Was The Earth",
       "date": "2024-10-17T00:00:00.000Z",
       "contributors": [],
       "image": "https://wfuihoxvnu28fnqu.public.blob.vercel-storage.com/1761086098110-fs-blink24_FUTERRA_001.png",
@@ -21,7 +21,9 @@
     },
     {
       "title": "NEW MAGIC WAND",
-      "contributors": [],
+      "contributors": [
+        "Emma Todys"
+      ],
       "image": "https://wfuihoxvnu28fnqu.public.blob.vercel-storage.com/1761094970676-still8.png",
       "displaySize": "standard"
     },
