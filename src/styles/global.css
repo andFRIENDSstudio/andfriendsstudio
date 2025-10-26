@@ -448,12 +448,11 @@ html.lenis, html.lenis body {
         }
 
         .logo-container {
-            padding: 2rem;
-            padding-bottom: .0125rem;
+            padding:0 2rem;
         }
 
         .footer-bar {
-            padding: 2rem;
+            padding: 1rem 2rem;
             font-size: 0.875rem;
         }
     }
