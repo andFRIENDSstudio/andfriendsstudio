@@ -399,7 +399,6 @@ html.lenis, html.lenis body {
         width: 100%;
         padding: 1.5rem;
         transform: none !important;
-        clip-path: none !important;
         scale: 1 !important;
         flex-shrink: 0;
         align-self: flex-end;

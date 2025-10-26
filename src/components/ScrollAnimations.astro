@@ -1,5 +1,5 @@
 ---
-// ScrollAnimations.astro - Desktop scroll animations
+// ScrollAnimations.astro - Desktop scroll animations + text reveals + mobile logo intro
 ---
 
 <script>
@@ -9,7 +9,9 @@
     
     gsap.registerPlugin(ScrollTrigger);
 
-    const isDesktop = window.innerWidth > 768;
+    // Use matchMedia for dynamic desktop/mobile detection
+    const mediaQuery = window.matchMedia('(min-width: 769px)');
+    let isDesktop = mediaQuery.matches;
 
     // AGGRESSIVE scroll reset - fire immediately and on load
     const resetScroll = () => {
@@ -30,7 +32,10 @@
     // Fire on load
     window.addEventListener('load', resetScroll);
 
-    if (isDesktop) {
+    // Wait for DOM to be ready for animations
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOMContentLoaded fired. isDesktop:', isDesktop, 'mediaQuery.matches:', mediaQuery.matches);
+        if (isDesktop) {
         // Calculate marquee dimensions first
         const track = document.querySelector('.marquee-track');
         
@@ -49,10 +54,67 @@
             
             // Entry animation on page load
             entryDuration: 1.5,
-            entryDelay: 0.3,
+            entryDelay: 0,
             entryEase: 'power2.out',
         };
         // ========================================
+        
+        // ========================================
+        // TEXT REVEAL ANIMATIONS (DESKTOP ONLY)
+        // Start at same time as logo animation (delay 0)
+        // ========================================
+        const textStartDelay = TIMING.entryDelay;
+        
+        // Split about copy into words
+        const aboutCopy = document.querySelector('.about-copy');
+        if (aboutCopy) {
+            const text = aboutCopy.textContent;
+            const words = text.split(' ');
+            aboutCopy.innerHTML = words.map(word => 
+                `<span style="display: inline-block; overflow: hidden;">
+                    <span style="display: inline-block;">${word}</span>
+                </span> `
+            ).join('');
+            
+            const wordSpans = aboutCopy.querySelectorAll('span > span');
+            gsap.set(wordSpans, { x: -20, opacity: 0 });
+            gsap.to(wordSpans, {
+                x: 0,
+                opacity: 1,
+                duration: 0.6,
+                stagger: 0.025,
+                ease: 'power2.out',
+                delay: textStartDelay
+            });
+        }
+        
+        // Links - animate from left
+        const links = document.querySelectorAll('.links a');
+        if (links.length) {
+            gsap.set(links, { x: -20, opacity: 0 });
+            gsap.to(links, {
+                x: 0,
+                opacity: 1,
+                duration: 0.6,
+                stagger: 0.05,
+                ease: 'power2.out',
+                delay: textStartDelay
+            });
+        }
+        
+        // Footer - animate from right
+        const footerItems = document.querySelectorAll('.footer-bar > div');
+        if (footerItems.length) {
+            gsap.set(footerItems, { x: 20, opacity: 0 });
+            gsap.to(footerItems, {
+                x: 0,
+                opacity: 1,
+                duration: 0.6,
+                stagger: 0.075,
+                ease: 'power2.out',
+                delay: textStartDelay
+            });
+        }
         
         // Function to recalculate on resize
         function setupAnimations() {
@@ -268,19 +330,53 @@
             }, 250);
         });
     } else {
+        // ========================================
+        // MOBILE: Logo intro clipPath animation ONLY
+        // No scroll behavior, just entry reveal
+        // ========================================
+        console.log('MOBILE: Running mobile setup');
+        
+        const mobileLogo = document.querySelector('.logo-container');
+        if (mobileLogo) {
+            // Set initial clipped state
+            gsap.set(mobileLogo, { 
+                clipPath: 'inset(0 100% 0 0)',
+                clearProps: 'transform,scale' // Clear any other props
+            });
+            console.log('MOBILE: Set logo initial clipPath');
+            
+            // Animate to fully revealed - ONLY ONCE on page load
+            gsap.to(mobileLogo, {
+                clipPath: 'inset(0 0% 0 0)',
+                duration: 1.5,
+                ease: 'power2.out',
+                delay: 0.3,
+                onStart: () => console.log('MOBILE: Logo reveal started'),
+                onUpdate: function() {
+                    console.log('MOBILE: Animation progress:', this.progress());
+                },
+                onComplete: () => {
+                    console.log('MOBILE: Logo reveal complete');
+                    console.log('MOBILE: Final clipPath:', mobileLogo.style.clipPath);
+                }
+            });
+        }
+        
         // Mobile: duplicate marquee track for infinite loop
         const track = document.querySelector('.marquee-track');
         if (track && !track.dataset.duplicated) {
             const clone = track.innerHTML;
             track.innerHTML = track.innerHTML + clone;
             track.dataset.duplicated = 'true';
+            console.log('MOBILE: Marquee duplicated');
         }
     }
+    }); // End DOMContentLoaded
 
     // Handle resize between mobile and desktop
     let lastIsDesktop = isDesktop;
     window.addEventListener('resize', () => {
-        const nowIsDesktop = window.innerWidth > 768;
+        const nowIsDesktop = mediaQuery.matches;
         
         // If switching from mobile to desktop, remove duplicates
         if (!lastIsDesktop && nowIsDesktop) {
@@ -304,5 +400,6 @@
         }
         
         lastIsDesktop = nowIsDesktop;
+        isDesktop = nowIsDesktop;
     });
 </script>

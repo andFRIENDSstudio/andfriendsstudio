@@ -81,7 +81,7 @@
             gsap.set(path, { fill: BRAND_COLORS[startColorIndex] });
         });
     });
-
+    
     // Wait for clip-path animation to start revealing
     gsap.delayedCall(0.3, () => {
         letters.forEach((letter, letterIndex) => {
@@ -109,6 +109,9 @@
             paths.forEach(path => {
                 tl.set(path, { fill: '#fff' }, BRAND_COLORS.length * 0.142);
             });
+            
         });
     });
-</script>
+
+    
+</script> 
