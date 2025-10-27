@@ -300,7 +300,7 @@ html.lenis, html.lenis body {
 
     .top-bar {
         position: relative;
-        flex-direction: column; /* Stack vertically */
+        flex-direction: column;
         justify-content: flex-start;
         gap: 1rem;
         padding: 1.5rem;
@@ -314,11 +314,10 @@ html.lenis, html.lenis body {
         gap: 1rem;
     }
 
-    /* SHOW about copy on mobile */
     .about-copy {
-        display: block; /* Changed from none */
+        display: block;
         max-width: 100%;
-        font-size: 0.75rem; /* Smaller for mobile */
+        font-size: 0.75rem; 
         line-height: 1.4;
     }
 
@@ -397,7 +396,7 @@ html.lenis, html.lenis body {
         bottom: 0;
         left: 0;
         width: 100%;
-        padding: 1.5rem;
+        padding: 01.5rem;
         transform: none !important;
         scale: 1 !important;
         flex-shrink: 0;
