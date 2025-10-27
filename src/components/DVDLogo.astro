@@ -1,5 +1,5 @@
 ---
-// DVDLogo.astro - Simplified DVD-style bouncing logo with color changes
+// DVDLogo.astro - WebGL DVD-style bouncing logo with PNG texture and color changes
 ---
 
 <canvas id="dvd-logo-canvas"></canvas>
@@ -9,8 +9,8 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100svw;
+    height: 100svh;
     pointer-events: none;
     z-index: 9998;
     opacity: 0;
@@ -23,40 +23,186 @@
 </style>
 
 <script>
+  import logoTexture from '../assets/FRIENDS_Icon_Blk_v002.png';
+
   const canvas = document.getElementById('dvd-logo-canvas') as HTMLCanvasElement;
-  const ctx = canvas.getContext('2d', { alpha: true })!;
-  
-  // Resize canvas
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  const gl = canvas.getContext('webgl2', { 
+    alpha: true, 
+    antialias: true,
+    powerPreference: 'high-performance'
+  });
+
+  if (!gl) {
+    console.warn('WebGL2 not supported');
   }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
 
   // Brand color progression
   const COLORS = [
-    '#EF3929',  // Red
-    '#D8A2CB',  // Pink
-    '#FE9200',  // Orange
-    '#5521A7',  // Purple
-    '#E3F607',  // Yellow-Green
-    '#0B4BE5',  // Blue
-    '#02C779',  // Green/Cyan
+    [0.937, 0.224, 0.161], // Red #EF3929
+    [0.847, 0.635, 0.796], // Pink #D8A2CB
+    [0.996, 0.573, 0.0],   // Orange #FE9200
+    [0.333, 0.129, 0.655], // Purple #5521A7
+    [0.890, 0.965, 0.027], // Yellow-Green #E3F607
+    [0.043, 0.294, 0.898], // Blue #0B4BE5
+    [0.008, 0.780, 0.475], // Green/Cyan #02C779
   ];
 
-  // Logo SVG paths
-  const LOGO_PATHS = [
-    { d: "M0 724.04C1.21183 685.868 0 606.308 0 606.308H550.988V724.04C550.988 724.04 183.224 723.329 0 724.04Z" },
-    { d: "M359.018 385.308C333.859 385.308 280.486 385.308 280.486 385.308V302.455H516.055V385.308H456.728C454.226 526.512 285.808 598.485 168.102 539.368C39.6478 481.543 27.187 300.348 155.905 234.856C73.8688 174.87 102.321 46.179 194.393 13.3015C286.73 -28.6647 417.502 32.6118 414.209 141.756C382.543 142.045 316.736 141.966 316.736 141.966C316.736 141.966 316.841 140.676 316.736 139.148C315.84 117.229 299.928 98.0771 278.984 92.1233C196.29 68.4399 173.028 190.255 260.333 195.076V280.3C158.934 279.378 123.317 417.711 216.839 461.442C274.638 489.499 356.015 453.302 359.044 385.281L359.018 385.308Z" }
-  ];
+  // Vertex shader
+  const vertexShaderSource = `#version 300 es
+    precision highp float;
+    
+    in vec2 a_position;
+    in vec2 a_texCoord;
+    
+    uniform vec2 u_resolution;
+    uniform vec2 u_translation;
+    uniform vec2 u_scale;
+    
+    out vec2 v_texCoord;
+    
+    void main() {
+      vec2 pos = a_position * u_scale + u_translation;
+      vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
+      clipSpace.y *= -1.0;
+      
+      gl_Position = vec4(clipSpace, 0.0, 1.0);
+      v_texCoord = a_texCoord;
+    }
+  `;
+
+  // Fragment shader with texture and color tint
+  const fragmentShaderSource = `#version 300 es
+    precision highp float;
+    
+    in vec2 v_texCoord;
+    
+    uniform sampler2D u_texture;
+    uniform vec3 u_color;
+    
+    out vec4 outColor;
+    
+    void main() {
+      vec4 texColor = texture(u_texture, v_texCoord);
+      
+      // Tint the black areas with color
+      float luminance = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+      vec3 finalColor = mix(u_color, texColor.rgb, luminance);
+      
+      outColor = vec4(finalColor, texColor.a);
+    }
+  `;
+
+  // Compile shader
+  function createShader(type: number, source: string) {
+    if (!gl) return null;
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+
+  // Create program
+  function createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+    if (!gl) return null;
+    const program = gl.createProgram();
+    if (!program) return null;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+    return program;
+  }
+
+  // Setup WebGL
+  const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
+  const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
   
-  const LOGO_ORIGINAL_WIDTH = 550.988;
-  const LOGO_ORIGINAL_HEIGHT = 724.04;
-  const LOGO_SCALE = 0.25; // Smaller for DVD mode
+  if (!vertexShader || !fragmentShader) {
+    console.error('Failed to create shaders');
+  }
 
-  // Pre-create Path2D objects
-  const logoPaths2D = LOGO_PATHS.map(pathData => new Path2D(pathData.d));
+  const program = vertexShader && fragmentShader ? createProgram(vertexShader, fragmentShader) : null;
+
+  if (!program) {
+    console.error('Failed to create WebGL program');
+  }
+
+  // Get locations
+  const positionLoc = gl.getAttribLocation(program!, 'a_position');
+  const texCoordLoc = gl.getAttribLocation(program!, 'a_texCoord');
+  const resolutionLoc = gl.getUniformLocation(program!, 'u_resolution');
+  const translationLoc = gl.getUniformLocation(program!, 'u_translation');
+  const scaleLoc = gl.getUniformLocation(program!, 'u_scale');
+  const colorLoc = gl.getUniformLocation(program!, 'u_color');
+  const textureLoc = gl.getUniformLocation(program!, 'u_texture');
+
+  // Create quad vertices
+  const QUAD_VERTICES = new Float32Array([
+    // Position  // TexCoord
+    0.0, 0.0,    0.0, 0.0,
+    0.0, 1.0,    0.0, 1.0,
+    1.0, 1.0,    1.0, 1.0,
+    
+    1.0, 1.0,    1.0, 1.0,
+    1.0, 0.0,    1.0, 0.0,
+    0.0, 0.0,    0.0, 0.0,
+  ]);
+
+  // Create vertex buffer
+  const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, QUAD_VERTICES, gl.STATIC_DRAW);
+
+  // Load texture
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  
+  // Set temporary 1x1 white pixel while loading
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+  
+  const textureImage = new Image();
+  textureImage.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  };
+  textureImage.src = logoTexture.src;
+
+  // VAO
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+
+  // Setup vertex attributes
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  
+  // Position attribute
+  gl.enableVertexAttribArray(positionLoc);
+  gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 16, 0);
+  
+  // TexCoord attribute
+  gl.enableVertexAttribArray(texCoordLoc);
+  gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 16, 8);
+
+  // DVD Logo constants
+  const LOGO_SCALE = 150; // Size in pixels
+  const LOGO_ASPECT = 269 / 358; // From PNG dimensions
+  const SPEED = 2;
 
   class DVDLogo {
     x: number;
@@ -67,68 +213,88 @@
     height: number;
     colorIndex: number;
 
-    constructor() {
-      this.width = LOGO_ORIGINAL_WIDTH * LOGO_SCALE;
-      this.height = LOGO_ORIGINAL_HEIGHT * LOGO_SCALE;
-      this.x = Math.random() * (canvas.width - this.width);
-      this.y = Math.random() * (canvas.height - this.height);
-      this.vx = 2;
-      this.vy = 2;
+    constructor(canvasWidth: number, canvasHeight: number) {
+      this.width = LOGO_SCALE * LOGO_ASPECT;
+      this.height = LOGO_SCALE;
+      this.x = Math.random() * (canvasWidth - this.width);
+      this.y = Math.random() * (canvasHeight - this.height);
+      this.vx = SPEED;
+      this.vy = SPEED;
       this.colorIndex = Math.floor(Math.random() * COLORS.length);
     }
 
-    update() {
+    update(canvasWidth: number, canvasHeight: number) {
       this.x += this.vx;
       this.y += this.vy;
 
-      // Check for corner hits (change color)
-      let hitCorner = false;
+      let hitWall = false;
       
       // Left or right wall
-      if (this.x <= 0 || this.x + this.width >= canvas.width) {
+      if (this.x <= 0 || this.x + this.width >= canvasWidth) {
         this.vx = -this.vx;
-        this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
-        hitCorner = true;
+        this.x = Math.max(0, Math.min(this.x, canvasWidth - this.width));
+        hitWall = true;
       }
       
       // Top or bottom wall
-      if (this.y <= 0 || this.y + this.height >= canvas.height) {
+      if (this.y <= 0 || this.y + this.height >= canvasHeight) {
         this.vy = -this.vy;
-        this.y = Math.max(0, Math.min(this.y, canvas.height - this.height));
-        hitCorner = true;
+        this.y = Math.max(0, Math.min(this.y, canvasHeight - this.height));
+        hitWall = true;
       }
 
-      // Change color on any wall hit
-      if (hitCorner) {
+      // Change color on wall hit
+      if (hitWall) {
         this.colorIndex = (this.colorIndex + 1) % COLORS.length;
       }
     }
 
-    draw() {
-      ctx.save();
-      ctx.translate(this.x, this.y);
-      ctx.scale(LOGO_SCALE, LOGO_SCALE);
-      
-      ctx.fillStyle = COLORS[this.colorIndex];
-      for (let i = 0; i < logoPaths2D.length; i++) {
-        ctx.fill(logoPaths2D[i]);
-      }
-      
-      ctx.restore();
+    getColor() {
+      return COLORS[this.colorIndex];
     }
   }
 
   let logo: DVDLogo | null = null;
   let animationId: number;
 
-  function animate() {
-    // Clear canvas with transparency
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Resize handler
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
-    if (logo) {
-      logo.update();
-      logo.draw();
-    }
+  // Render function
+  function animate() {
+    if (!logo) return;
+
+    // Update logo
+    logo.update(canvas.width, canvas.height);
+
+    // Clear canvas
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // Draw
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    gl.uniform2f(resolutionLoc, canvas.width, canvas.height);
+    gl.uniform2f(translationLoc, logo.x, logo.y);
+    gl.uniform2f(scaleLoc, logo.width, logo.height);
+    gl.uniform3fv(colorLoc, logo.getColor());
+    
+    // Bind texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(textureLoc, 0);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     animationId = requestAnimationFrame(animate);
   }
@@ -136,7 +302,7 @@
   // Public API
   (window as any).startDVDLogo = () => {
     canvas.classList.add('active');
-    logo = new DVDLogo();
+    logo = new DVDLogo(canvas.width, canvas.height);
     animate();
   };
 
@@ -144,6 +310,7 @@
     canvas.classList.remove('active');
     if (animationId) cancelAnimationFrame(animationId);
     logo = null;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
   };
 </script>
