@@ -397,6 +397,7 @@ html.lenis, html.lenis body {
         left: 0;
         width: 100%;
         padding: 01.5rem;
+        margin-top:auto;
         transform: none !important;
         scale: 1 !important;
         flex-shrink: 0;
