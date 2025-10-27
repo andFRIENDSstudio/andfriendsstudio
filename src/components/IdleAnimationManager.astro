@@ -48,15 +48,26 @@
     isAnimating = false;
   }
 
-  // Track user activity
-  const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
-  
-  activityEvents.forEach(event => {
-    document.addEventListener(event, resetIdleTimer, { passive: true });
-  });
+  // Initialize after other components load
+  function initialize() {
+    // Track user activity
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    
+    activityEvents.forEach(event => {
+      document.addEventListener(event, resetIdleTimer, { passive: true });
+    });
 
-  // Start idle detection
-  resetIdleTimer();
+    // Start idle detection
+    resetIdleTimer();
+  }
+
+  // Wait for DOM and other scripts to load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    // DOM already loaded, wait a tick for other scripts
+    setTimeout(initialize, 100);
+  }
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
