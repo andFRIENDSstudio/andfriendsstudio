@@ -245,7 +245,7 @@
   const MAX_LOGOS = 8;
   
   // Frame rate limiting for classic Solitaire look
-  const TARGET_FPS = 120;
+  const TARGET_FPS = 120; // Lock to 30fps
   const FRAME_TIME = 1000 / TARGET_FPS;
   let lastFrameTime = 0;
 
@@ -282,9 +282,17 @@
         this.trail.shift();
       }
 
-      // Fade trail
+      // Fade trail - cascade effect (stay opaque until last 30%)
       this.trail.forEach((t, i) => {
-        t.alpha = (i + 1) / this.trail.length;
+        const progress = i / Math.max(1, this.trail.length - 1);
+        // Stay at full opacity for first 70%, then fade quickly in last 30%
+        if (progress < 0.7) {
+          t.alpha = 1.0;
+        } else {
+          // Fade from 1.0 to 0 in the last 30%
+          const fadeProgress = (progress - 0.7) / 0.3;
+          t.alpha = 1.0 - fadeProgress;
+        }
       });
 
       // Floor collision
@@ -336,7 +344,7 @@
         instances.push({
           x: t.x,
           y: t.y,
-          alpha: t.alpha * 0.6,
+          alpha: t.alpha * 0.85, // More opaque trails
           color: color,
           scale: LOGO_SCALE
         });
