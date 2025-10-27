@@ -1,5 +1,5 @@
 ---
-// FallingLogos.astro - Optimized solitaire-style win animation
+// FallingLogos.astro - WebGL GPU-accelerated falling logos with PNG texture and rainbow trails
 ---
 
 <canvas id="falling-logos-canvas"></canvas>
@@ -23,244 +23,451 @@
 </style>
 
 <script>
-  import gsap from 'gsap';
+  import logoTexture from '../assets/FRIENDS_Icon_Blk_v002.png';
 
   const canvas = document.getElementById('falling-logos-canvas') as HTMLCanvasElement;
-  const ctx = canvas.getContext('2d', { alpha: true })!;
-  
-  // Resize canvas
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+  const gl = canvas.getContext('webgl2', { 
+    alpha: true, 
+    antialias: true,
+    powerPreference: 'high-performance'
+  });
+
+  if (!gl) {
+    console.warn('WebGL2 not supported');
   }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
 
-  // Brand color progression in ROYGBV (rainbow) order
-  const COLOR_PROGRESSION = [
-    '#F03929',  // Red
-    '#FF9200',  // Orange
-    '#E3F608',  // Yellow
-    '#02C779',  // Green
-    '#0C4AE5',  // Blue
-    '#5522A8',  // Violet/Purple
+  // Brand colors in ROYGBV order
+  const COLORS = [
+    [0.941, 0.224, 0.161], // Red #F03929
+    [1.0, 0.573, 0.0],     // Orange #FF9200
+    [0.890, 0.965, 0.031], // Yellow #E3F608
+    [0.008, 0.780, 0.475], // Green #02C779
+    [0.047, 0.290, 0.898], // Blue #0C4AE5
+    [0.333, 0.133, 0.659], // Purple #5522A8
   ];
 
-  // Optimized trail parameters
-  const TRAIL_LENGTH = 20;
-  const FADE_SPEED = 0.05;
+  // Vertex shader with instancing and texture coordinates
+  const vertexShaderSource = `#version 300 es
+    precision highp float;
+    
+    in vec2 a_position;
+    in vec2 a_texCoord;
+    in vec3 a_instancePosition;  // x, y, alpha
+    in vec3 a_instanceColor;
+    in float a_instanceScale;
+    
+    uniform vec2 u_resolution;
+    uniform float u_logoAspect;
+    
+    out vec2 v_texCoord;
+    out vec3 v_color;
+    out float v_alpha;
+    
+    void main() {
+      // Apply instance transformations
+      vec2 pos = a_position * a_instanceScale;
+      pos.x *= u_logoAspect;
+      
+      // Translate to instance position
+      pos += a_instancePosition.xy;
+      
+      // Convert to clip space
+      vec2 clipSpace = (pos / u_resolution) * 2.0 - 1.0;
+      clipSpace.y *= -1.0;
+      
+      gl_Position = vec4(clipSpace, 0.0, 1.0);
+      
+      v_texCoord = a_texCoord;
+      v_color = a_instanceColor;
+      v_alpha = a_instancePosition.z; // alpha stored in z
+    }
+  `;
 
-  // Logo SVG paths (from Logo.astro)
-  const LOGO_PATHS = [
-    { d: "M0 724.04C1.21183 685.868 0 606.308 0 606.308H550.988V724.04C550.988 724.04 183.224 723.329 0 724.04Z" },
-    { d: "M359.018 385.308C333.859 385.308 280.486 385.308 280.486 385.308V302.455H516.055V385.308H456.728C454.226 526.512 285.808 598.485 168.102 539.368C39.6478 481.543 27.187 300.348 155.905 234.856C73.8688 174.87 102.321 46.179 194.393 13.3015C286.73 -28.6647 417.502 32.6118 414.209 141.756C382.543 142.045 316.736 141.966 316.736 141.966C316.736 141.966 316.841 140.676 316.736 139.148C315.84 117.229 299.928 98.0771 278.984 92.1233C196.29 68.4399 173.028 190.255 260.333 195.076V280.3C158.934 279.378 123.317 417.711 216.839 461.442C274.638 489.499 356.015 453.302 359.044 385.281L359.018 385.308Z" }
-  ];
+  // Fragment shader with texture sampling and color tinting
+  const fragmentShaderSource = `#version 300 es
+    precision highp float;
+    
+    in vec2 v_texCoord;
+    in vec3 v_color;
+    in float v_alpha;
+    
+    uniform sampler2D u_texture;
+    
+    out vec4 outColor;
+    
+    void main() {
+      vec4 texColor = texture(u_texture, v_texCoord);
+      
+      // Use texture alpha, tint with color
+      // If pixel is black in texture, apply color tint
+      float luminance = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
+      vec3 finalColor = mix(v_color, texColor.rgb, luminance);
+      
+      outColor = vec4(finalColor, texColor.a * v_alpha);
+    }
+  `;
+
+  // Compile shader
+  function createShader(type: number, source: string) {
+    if (!gl) return null;
+    const shader = gl.createShader(type);
+    if (!shader) return null;
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+
+  // Create program
+  function createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+    if (!gl) return null;
+    const program = gl.createProgram();
+    if (!program) return null;
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+    return program;
+  }
+
+  // Setup WebGL
+  const vertexShader = createShader(gl.VERTEX_SHADER, vertexShaderSource);
+  const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentShaderSource);
   
-  const LOGO_ORIGINAL_WIDTH = 550.988;
-  const LOGO_ORIGINAL_HEIGHT = 724.04;
-  const LOGO_SCALE = 0.35;
+  if (!vertexShader || !fragmentShader) {
+    console.error('Failed to create shaders');
+  }
 
-  // Physics constants
+  const program = vertexShader && fragmentShader ? createProgram(vertexShader, fragmentShader) : null;
+
+  if (!program) {
+    console.error('Failed to create WebGL program');
+  }
+
+  // Get attribute and uniform locations
+  const positionLoc = gl.getAttribLocation(program!, 'a_position');
+  const texCoordLoc = gl.getAttribLocation(program!, 'a_texCoord');
+  const instancePositionLoc = gl.getAttribLocation(program!, 'a_instancePosition');
+  const instanceColorLoc = gl.getAttribLocation(program!, 'a_instanceColor');
+  const instanceScaleLoc = gl.getAttribLocation(program!, 'a_instanceScale');
+  const resolutionLoc = gl.getUniformLocation(program!, 'u_resolution');
+  const logoAspectLoc = gl.getUniformLocation(program!, 'u_logoAspect');
+  const textureLoc = gl.getUniformLocation(program!, 'u_texture');
+
+  // Create quad vertices (2 triangles)
+  const QUAD_VERTICES = new Float32Array([
+    // Position  // TexCoord
+    0.0, 0.0,    0.0, 0.0,
+    0.0, 1.0,    0.0, 1.0,
+    1.0, 1.0,    1.0, 1.0,
+    
+    1.0, 1.0,    1.0, 1.0,
+    1.0, 0.0,    1.0, 0.0,
+    0.0, 0.0,    0.0, 0.0,
+  ]);
+
+  // Create vertex buffer
+  const vertexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, QUAD_VERTICES, gl.STATIC_DRAW);
+
+  // Create instance buffers
+  const instancePositionBuffer = gl.createBuffer();
+  const instanceColorBuffer = gl.createBuffer();
+  const instanceScaleBuffer = gl.createBuffer();
+
+  // Load texture
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  
+  // Set temporary 1x1 white pixel while loading
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+  
+  const textureImage = new Image();
+  textureImage.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  };
+  textureImage.src = logoTexture.src;
+
+  // VAO
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+
+  // Setup vertex attributes
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+  
+  // Position attribute
+  gl.enableVertexAttribArray(positionLoc);
+  gl.vertexAttribPointer(positionLoc, 2, gl.FLOAT, false, 16, 0);
+  
+  // TexCoord attribute
+  gl.enableVertexAttribArray(texCoordLoc);
+  gl.vertexAttribPointer(texCoordLoc, 2, gl.FLOAT, false, 16, 8);
+
+  // Setup instance attributes
+  gl.bindBuffer(gl.ARRAY_BUFFER, instancePositionBuffer);
+  gl.enableVertexAttribArray(instancePositionLoc);
+  gl.vertexAttribPointer(instancePositionLoc, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(instancePositionLoc, 1);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, instanceColorBuffer);
+  gl.enableVertexAttribArray(instanceColorLoc);
+  gl.vertexAttribPointer(instanceColorLoc, 3, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(instanceColorLoc, 1);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, instanceScaleBuffer);
+  gl.enableVertexAttribArray(instanceScaleLoc);
+  gl.vertexAttribPointer(instanceScaleLoc, 1, gl.FLOAT, false, 0, 0);
+  gl.vertexAttribDivisor(instanceScaleLoc, 1);
+
+  // Physics constants - user's preferred settings
   const GRAVITY = 0.5;
-  const BOUNCE_DAMPING = 0.7;
-  const FLOOR_Y_OFFSET = 0;
+  const BOUNCE_DAMPING = 0.8;
+  const LOGO_SCALE = 240;
+  const LOGO_ASPECT = 269 / 358;
+  const TRAIL_LENGTH = 40;
+  const MAX_LOGOS = 8;
+  
+  // Frame rate limiting for classic Solitaire look
+  const TARGET_FPS = 120; // Lock to 30fps
+  const FRAME_TIME = 1000 / TARGET_FPS;
+  let lastFrameTime = 0;
 
-  let logos: FallingLogo[] = [];
-  let lastTime = 0;
-  const targetFPS = 60;
-  const frameTime = 1000 / targetFPS;
-
-  // Pre-create Path2D objects for performance
-  const logoPaths2D = LOGO_PATHS.map(pathData => new Path2D(pathData.d));
-
+  // Logo class
   class FallingLogo {
     x: number;
     y: number;
-    vy: number;
     vx: number;
-    width: number;
-    height: number;
+    vy: number;
     bounces: number;
     maxBounces: number;
     trail: Array<{ x: number; y: number; alpha: number }>;
     dead: boolean;
 
-    constructor(x: number, startY = -150) {
+    constructor(x: number, y = -150) {
       this.x = x;
-      this.y = startY;
-      this.vy = 0;
+      this.y = y;
       this.vx = (Math.random() - 0.5) * 8;
-      this.width = LOGO_ORIGINAL_WIDTH * LOGO_SCALE;
-      this.height = LOGO_ORIGINAL_HEIGHT * LOGO_SCALE;
+      this.vy = 0;
       this.bounces = 0;
       this.maxBounces = 4;
       this.trail = [];
       this.dead = false;
     }
 
-    update() {
-      // Apply gravity
+    update(canvasHeight: number, canvasWidth: number) {
       this.vy += GRAVITY;
-      
-      // Update position
       this.y += this.vy;
       this.x += this.vx;
 
-      // Add trail copy
-      if (this.bounces <= this.maxBounces || this.y < canvas.height + 100) {
-        this.trail.push({ x: this.x, y: this.y, alpha: 1 });
-
-        if (this.trail.length > TRAIL_LENGTH) {
-          this.trail.shift();
-        }
+      // Add trail
+      this.trail.push({ x: this.x, y: this.y, alpha: 1.0 });
+      if (this.trail.length > TRAIL_LENGTH) {
+        this.trail.shift();
       }
 
       // Fade trail
-      for (let i = 0; i < this.trail.length; i++) {
-        this.trail[i].alpha -= FADE_SPEED;
-      }
-
-      // Remove fully faded copies
-      this.trail = this.trail.filter(copy => copy.alpha > 0);
+      this.trail.forEach((t, i) => {
+        t.alpha = (i + 1) / this.trail.length;
+      });
 
       // Floor collision
-      const floorY = canvas.height - this.height - FLOOR_Y_OFFSET;
+      const floorY = canvasHeight - LOGO_SCALE;
       if (this.y >= floorY && this.vy > 0 && this.bounces < this.maxBounces) {
         this.y = floorY;
         this.vy = -this.vy * BOUNCE_DAMPING;
         this.bounces++;
       }
 
-      // Accelerate downward after max bounces
+      // Accelerate after max bounces
       if (this.bounces >= this.maxBounces) {
         this.vy = Math.max(this.vy, 5);
       }
 
-      // Mark as dead once off screen
-      if (this.y > canvas.height + 50) {
+      // Mark dead when off screen
+      if (this.y > canvasHeight + 100) {
         this.dead = true;
       }
 
       // Wall bounce
-      if (this.x <= 0 || this.x + this.width >= canvas.width) {
+      if (this.x <= 0 || this.x + LOGO_SCALE * LOGO_ASPECT >= canvasWidth) {
         this.vx = -this.vx;
-        this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
+        this.x = Math.max(0, Math.min(this.x, canvasWidth - LOGO_SCALE * LOGO_ASPECT));
       }
     }
 
-    draw() {
-      // Draw trail
-      for (let i = 0; i < this.trail.length; i++) {
-        const copy = this.trail[i];
-        const position = i / Math.max(1, this.trail.length - 1);
-        const color = getColorForPosition(position);
-        drawLogo(copy.x, copy.y, copy.alpha, color);
-      }
-
-      // Draw main logo
-      drawLogo(this.x, this.y, 1, '#000');
+    getInstances() {
+      const instances: Array<{
+        x: number;
+        y: number;
+        alpha: number;
+        color: number[];
+        scale: number;
+      }> = [];
+      
+      // Add trail with rainbow gradient
+      this.trail.forEach((t, i) => {
+        const progress = i / Math.max(1, this.trail.length - 1);
+        const colorIndex = Math.floor(progress * (COLORS.length - 1));
+        const nextColorIndex = Math.min(colorIndex + 1, COLORS.length - 1);
+        const factor = (progress * (COLORS.length - 1)) - colorIndex;
+        
+        // Interpolate color
+        const color = COLORS[colorIndex].map((c, j) => 
+          c + (COLORS[nextColorIndex][j] - c) * factor
+        );
+        
+        instances.push({
+          x: t.x,
+          y: t.y,
+          alpha: t.alpha * 0.6,
+          color: color,
+          scale: LOGO_SCALE
+        });
+      });
+      
+      // Add main logo (black)
+      instances.push({
+        x: this.x,
+        y: this.y,
+        alpha: 1.0,
+        color: [0, 0, 0],
+        scale: LOGO_SCALE
+      });
+      
+      return instances;
     }
   }
 
-  // Optimized color interpolation
-  function interpolateColor(color1: string, color2: string, factor: number): string {
-    const r1 = parseInt(color1.slice(1, 3), 16);
-    const g1 = parseInt(color1.slice(3, 5), 16);
-    const b1 = parseInt(color1.slice(5, 7), 16);
-    
-    const r2 = parseInt(color2.slice(1, 3), 16);
-    const g2 = parseInt(color2.slice(3, 5), 16);
-    const b2 = parseInt(color2.slice(5, 7), 16);
-    
-    const r = Math.round(r1 + (r2 - r1) * factor);
-    const g = Math.round(g1 + (g2 - g1) * factor);
-    const b = Math.round(b1 + (b2 - b1) * factor);
-    
-    return `rgb(${r},${g},${b})`;
-  }
-
-  function getColorForPosition(position: number): string {
-    const totalColors = COLOR_PROGRESSION.length;
-    const scaledPos = position * (totalColors - 1);
-    
-    const colorIndex = Math.floor(scaledPos);
-    const nextColorIndex = Math.min(colorIndex + 1, totalColors - 1);
-    const factor = scaledPos - colorIndex;
-    
-    return interpolateColor(
-      COLOR_PROGRESSION[colorIndex],
-      COLOR_PROGRESSION[nextColorIndex],
-      factor
-    );
-  }
-
-  function drawLogo(x: number, y: number, alpha = 1, color = '#000') {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(x, y);
-    ctx.scale(LOGO_SCALE, LOGO_SCALE);
-    
-    ctx.fillStyle = color;
-    for (let i = 0; i < logoPaths2D.length; i++) {
-      ctx.fill(logoPaths2D[i]);
-    }
-    
-    ctx.restore();
-  }
-
+  // Animation state
+  let logos: FallingLogo[] = [];
+  let isRunning = false;
+  let spawnInterval: number;
   let animationId: number;
 
-  function animate(currentTime: number) {
-    if (!lastTime) lastTime = currentTime;
-    const deltaTime = currentTime - lastTime;
-    
-    if (deltaTime >= frameTime) {
-      // Clear with transparent fade for trail effect
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Resize handler
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
-      // Update and draw
-      for (let i = logos.length - 1; i >= 0; i--) {
-        logos[i].update();
-        logos[i].draw();
-        
-        if (logos[i].dead) {
-          logos.splice(i, 1);
-        }
-      }
+  // Render function with frame rate limiting
+  function render(currentTime: number) {
+    if (!isRunning) return;
+
+    // Frame rate limiting
+    const deltaTime = currentTime - lastFrameTime;
+    if (deltaTime < FRAME_TIME) {
+      animationId = requestAnimationFrame(render);
+      return;
+    }
+    lastFrameTime = currentTime - (deltaTime % FRAME_TIME);
+
+    // Update logos
+    logos.forEach(logo => logo.update(canvas.height, canvas.width));
+    logos = logos.filter(logo => !logo.dead);
+
+    // Collect all instances
+    const allInstances = logos.flatMap(logo => logo.getInstances());
+
+    // Clear canvas
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    if (allInstances.length > 0) {
+      // Prepare instance data
+      const positions = new Float32Array(allInstances.length * 3);
+      const colors = new Float32Array(allInstances.length * 3);
+      const scales = new Float32Array(allInstances.length);
+
+      allInstances.forEach((inst, i) => {
+        positions[i * 3] = inst.x;
+        positions[i * 3 + 1] = inst.y;
+        positions[i * 3 + 2] = inst.alpha;
+
+        colors[i * 3] = inst.color[0];
+        colors[i * 3 + 1] = inst.color[1];
+        colors[i * 3 + 2] = inst.color[2];
+
+        scales[i] = inst.scale;
+      });
+
+      // Upload instance data
+      gl.bindBuffer(gl.ARRAY_BUFFER, instancePositionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, instanceColorBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, colors, gl.DYNAMIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, instanceScaleBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, scales, gl.DYNAMIC_DRAW);
+
+      // Draw
+      gl.useProgram(program);
+      gl.bindVertexArray(vao);
       
-      lastTime = currentTime - (deltaTime % frameTime);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      gl.uniform2f(resolutionLoc, canvas.width, canvas.height);
+      gl.uniform1f(logoAspectLoc, LOGO_ASPECT);
+      
+      // Bind texture
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.uniform1i(textureLoc, 0);
+
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, allInstances.length);
     }
 
-    animationId = requestAnimationFrame(animate);
+    animationId = requestAnimationFrame(render);
   }
 
-  const MAX_LOGOS = 5;
-  let spawnInterval: number;
-  
+  // Spawn logo
   function spawnLogo() {
     if (logos.length >= MAX_LOGOS) return;
-    
-    const logoWidth = LOGO_ORIGINAL_WIDTH * LOGO_SCALE;
-    const x = Math.random() * (canvas.width - logoWidth);
+    const x = Math.random() * (canvas.width - LOGO_SCALE * LOGO_ASPECT);
     logos.push(new FallingLogo(x));
   }
 
   // Public API for starting/stopping
   (window as any).startFallingLogos = () => {
+    if (isRunning) return;
     canvas.classList.add('active');
     logos = [];
-    spawnInterval = setInterval(spawnLogo, 1200) as unknown as number;
+    isRunning = true;
+    lastFrameTime = performance.now();
+    spawnInterval = setInterval(spawnLogo, 1400) as unknown as number;
     spawnLogo();
-    animate(0);
+    animationId = requestAnimationFrame(render);
   };
 
   (window as any).stopFallingLogos = () => {
     canvas.classList.remove('active');
+    isRunning = false;
     if (spawnInterval) clearInterval(spawnInterval);
     if (animationId) cancelAnimationFrame(animationId);
     logos = [];
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
   };
 </script>
